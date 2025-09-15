@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { Send, User, Bot } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 
 interface Message {
   id: string
@@ -33,7 +36,15 @@ export function Chat({ darkMode }: ChatProps) {
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: 'Thank you for your message. I\'m here to help with quantitative analysis.',
+        content: `Thank you for your message: "${inputValue}"
+
+I'm **PersonaQuant**, here to help with:
+- Stock analysis
+- Portfolio optimization
+- Risk assessment
+- Market insights
+
+How can I assist you today?`,
         sender: 'assistant',
         timestamp: new Date()
       }
@@ -85,7 +96,7 @@ export function Chat({ darkMode }: ChatProps) {
                   </div>
                 )}
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
                     message.sender === 'user'
                       ? darkMode
                         ? 'bg-blue-600 text-white'
@@ -95,7 +106,27 @@ export function Chat({ darkMode }: ChatProps) {
                       : 'bg-gray-200 text-gray-900'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  {message.sender === 'user' ? (
+                    <p className="text-sm">{message.content}</p>
+                  ) : (
+                    <div className={`prose prose-sm max-w-none ${
+                      darkMode ? 'prose-invert' : ''
+                    }`}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className={`mb-2 last:mb-0 ml-4 space-y-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{children}</ul>,
+                          ol: ({ children }) => <ol className={`list-decimal list-inside mb-2 last:mb-0 ml-4 space-y-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{children}</ol>,
+                          li: ({ children }) => <li className={`${darkMode ? 'text-white' : 'text-gray-800'} flex items-start`}><span className="mr-2 font-bold text-lg">•</span><span className="flex-1">{children}</span></li>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          code: ({ children }) => <code className={`px-1 py-0.5 rounded text-xs ${darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>{children}</code>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
                 {message.sender === 'user' && (
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
