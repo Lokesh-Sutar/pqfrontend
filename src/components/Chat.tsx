@@ -18,9 +18,10 @@ interface ChatProps {
 export function Chat({ darkMode }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
 
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() || isTyping) return
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -31,9 +32,11 @@ export function Chat({ darkMode }: ChatProps) {
 
     setMessages(prev => [...prev, newMessage])
     setInputValue('')
+    setIsTyping(true)
 
-    // Simulate AI response
+    // Simulate AI response with typing indicator
     setTimeout(() => {
+      setIsTyping(false)
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: `Thank you for your message: "${inputValue}"
@@ -49,11 +52,11 @@ How can I assist you today?`,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, aiResponse])
-    }, 1000)
+    }, 2000)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isTyping) {
       handleSendMessage()
     }
   }
@@ -84,7 +87,7 @@ How can I assist you today?`,
             messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex gap-3 ${
+                className={`flex gap-3 animate-in slide-in-from-bottom-2 duration-300 ${
                   message.sender === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
@@ -138,6 +141,32 @@ How can I assist you today?`,
               </div>
             ))
           )}
+          
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                darkMode ? 'bg-blue-600' : 'bg-blue-500'
+              }`}>
+                <Bot size={16} className="text-white" />
+              </div>
+              <div className={`px-4 py-3 rounded-lg ${
+                darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`}>
+                <div className="flex space-x-1">
+                  <div className={`w-2 h-2 rounded-full animate-bounce ${
+                    darkMode ? 'bg-gray-400' : 'bg-gray-500'
+                  }`} style={{ animationDelay: '0ms' }}></div>
+                  <div className={`w-2 h-2 rounded-full animate-bounce ${
+                    darkMode ? 'bg-gray-400' : 'bg-gray-500'
+                  }`} style={{ animationDelay: '150ms' }}></div>
+                  <div className={`w-2 h-2 rounded-full animate-bounce ${
+                    darkMode ? 'bg-gray-400' : 'bg-gray-500'
+                  }`} style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -161,11 +190,14 @@ How can I assist you today?`,
             />
             <button
               onClick={handleSendMessage}
-              className={`px-4 py-3 rounded-lg transition-colors ${
-                darkMode
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
+              disabled={isTyping || !inputValue.trim()}
+              className={`px-4 py-3 rounded-lg transition-all duration-200 ${
+                isTyping || !inputValue.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : darkMode
+                  ? 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95'
+                  : 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95'
+              } text-white`}
             >
               <Send size={20} />
             </button>
