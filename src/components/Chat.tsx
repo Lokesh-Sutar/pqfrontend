@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Send, User, Bot } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -19,6 +19,17 @@ export function Chat({ darkMode }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, isTyping])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   const handleSendMessage = () => {
     if (!inputValue.trim() || isTyping) return
@@ -33,6 +44,9 @@ export function Chat({ darkMode }: ChatProps) {
     setMessages(prev => [...prev, newMessage])
     setInputValue('')
     setIsTyping(true)
+    
+    // Keep input focused
+    inputRef.current?.focus()
 
     // Simulate AI response with typing indicator
     setTimeout(() => {
@@ -167,6 +181,9 @@ How can I assist you today?`,
               </div>
             </div>
           )}
+          
+          {/* Invisible div for auto-scroll */}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -177,6 +194,7 @@ How can I assist you today?`,
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
