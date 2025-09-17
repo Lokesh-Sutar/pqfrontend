@@ -115,13 +115,12 @@ How can I assist you today?`,
                 <div
                   className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
                     message.sender === 'user'
-                      ? darkMode
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-blue-500 text-white'
+                      ? 'text-white'
                       : darkMode
                       ? 'bg-gray-700 text-white'
                       : 'bg-gray-200 text-gray-900'
                   }`}
+                  style={message.sender === 'user' ? { backgroundColor: 'var(--primary)' } : {}}
                 >
                   {message.sender === 'user' ? (
                     <p className="text-sm">{message.content}</p>
@@ -209,13 +208,12 @@ How can I assist you today?`,
             <button
               onClick={handleSendMessage}
               disabled={isTyping || !inputValue.trim()}
-              className={`px-4 py-3 rounded-lg transition-all duration-200 ${
+              className={`px-4 py-3 rounded-lg transition-all duration-200 text-white hover:scale-105 active:scale-95 ${
                 isTyping || !inputValue.trim()
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : darkMode
-                  ? 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95'
-                  : 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95'
-              } text-white`}
+                  : 'hover:opacity-90'
+              }`}
+              style={!isTyping && inputValue.trim() ? { backgroundColor: 'var(--primary)' } : {}}
             >
               <Send size={20} />
             </button>
