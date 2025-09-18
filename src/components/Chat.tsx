@@ -34,9 +34,10 @@ export function Chat({ darkMode }: ChatProps) {
   const handleSendMessage = () => {
     if (!inputValue.trim() || isTyping) return
 
+    const userInput = inputValue
     const newMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: userInput,
       sender: 'user',
       timestamp: new Date()
     }
@@ -48,25 +49,58 @@ export function Chat({ darkMode }: ChatProps) {
     // Keep input focused
     inputRef.current?.focus()
 
-    // Simulate AI response with typing indicator
-    setTimeout(() => {
+    // Send message to backend API
+    try {
+      const eventSource = new EventSource(
+        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(userInput)}`
+      )
+
+      let responseContent = ''
+
+      eventSource.addEventListener('run', (event) => {
+        const data = JSON.parse(event.data)
+        
+        if (data.event === 'TeamRunCompleted') {
+          setIsTyping(false)
+          responseContent = data.payload?.content || 'No response received'
+          
+          const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content: responseContent,
+            sender: 'assistant',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, aiResponse])
+          eventSource.close()
+        }
+      })
+
+      eventSource.addEventListener('error', () => {
+        setIsTyping(false)
+        const errorResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          content: 'Sorry, I encountered an error while processing your request. Please try again.',
+          sender: 'assistant',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorResponse])
+        eventSource.close()
+      })
+
+      eventSource.addEventListener('end', () => {
+        setIsTyping(false)
+        eventSource.close()
+      })
+    } catch (error) {
       setIsTyping(false)
-      const aiResponse: Message = {
+      const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: `Thank you for your message: "${inputValue}"
-
-I'm **PersonaQuant**, here to help with:
-- Stock analysis
-- Portfolio optimization
-- Risk assessment
-- Market insights
-
-How can I assist you today?`,
+        content: 'Failed to connect to the AI service. Please check your connection and try again.',
         sender: 'assistant',
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, aiResponse])
-    }, 2000)
+      setMessages(prev => [...prev, errorResponse])
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
