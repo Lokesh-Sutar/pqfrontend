@@ -4,11 +4,20 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 
+interface AgentCard {
+  id: string
+  title: string
+  content: string
+}
+
 interface Message {
   id: string
   content: string
   sender: 'user' | 'assistant'
   timestamp: Date
+  type?: 'user' | 'ai-processing' | 'ai-response'
+  cards?: AgentCard[]
+  finalCard?: { title: string; content: string; tickers?: string[] }
 }
 
 interface ChatProps {
@@ -109,6 +118,155 @@ export function Chat({ darkMode }: ChatProps) {
     }
   }
 
+  // Custom markdown components for consistent styling
+  const markdownComponents = {
+    h1: ({ children }: any) => (
+      <h1 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        {children}
+      </h1>
+    ),
+    h2: ({ children }: any) => (
+      <h2 className={`text-base font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        {children}
+      </h2>
+    ),
+    h3: ({ children }: any) => (
+      <h3 className={`text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+        {children}
+      </h3>
+    ),
+    p: ({ children }: any) => (
+      <p className={`mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+        {children}
+      </p>
+    ),
+    ul: ({ children }: any) => (
+      <ul className={`mb-2 ml-4 space-y-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+        {children}
+      </ul>
+    ),
+    ol: ({ children }: any) => (
+      <ol className={`list-decimal list-inside mb-2 ml-4 space-y-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+        {children}
+      </ol>
+    ),
+    li: ({ children }: any) => (
+      <li className={`${darkMode ? 'text-gray-200' : 'text-gray-800'} flex items-start`}>
+        <span className="mr-2 font-bold text-lg">•</span>
+        <span className="flex-1">{children}</span>
+      </li>
+    ),
+    strong: ({ children }: any) => (
+      <strong className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        {children}
+      </strong>
+    ),
+    em: ({ children }: any) => (
+      <em className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+        {children}
+      </em>
+    ),
+    code: ({ children }: any) => (
+      <code className={`px-1 py-0.5 rounded text-xs font-mono ${
+        darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-800'
+      }`}>
+        {children}
+      </code>
+    ),
+    pre: ({ children }: any) => (
+      <pre className={`p-3 rounded-lg overflow-x-auto text-sm font-mono mb-2 ${
+        darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-800'
+      }`}>
+        {children}
+      </pre>
+    ),
+    blockquote: ({ children }: any) => (
+      <blockquote className={`border-l-4 pl-4 italic mb-2 ${
+        darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-600'
+      }`}>
+        {children}
+      </blockquote>
+    ),
+    table: ({ children }: any) => (
+      <table className={`min-w-full mb-4 border-collapse ${
+        darkMode ? 'border-gray-600' : 'border-gray-300'
+      }`}>
+        {children}
+      </table>
+    ),
+    thead: ({ children }: any) => (
+      <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+        {children}
+      </thead>
+    ),
+    tbody: ({ children }: any) => <tbody>{children}</tbody>,
+    tr: ({ children }: any) => (
+      <tr className={`border-b ${
+        darkMode ? 'border-gray-600' : 'border-gray-300'
+      }`}>
+        {children}
+      </tr>
+    ),
+    th: ({ children }: any) => (
+      <th className={`px-3 py-2 text-left font-semibold ${
+        darkMode ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'
+      } border`}>
+        {children}
+      </th>
+    ),
+    td: ({ children }: any) => (
+      <td className={`px-3 py-2 ${
+        darkMode ? 'text-gray-200 border-gray-600' : 'text-gray-800 border-gray-300'
+      } border`}>
+        {children}
+      </td>
+    ),
+    hr: () => (
+      <hr className={`my-3 ${
+        darkMode ? 'border-gray-600' : 'border-gray-300'
+      }`} />
+    ),
+  }
+
+  // Render agent cards
+  const renderCards = (cards: AgentCard[]) =>
+    cards?.map((card) => (
+      <div
+        key={card.id}
+        className={`border rounded-lg ${
+          darkMode
+            ? 'border-gray-600 bg-gray-800'
+            : 'border-gray-200 bg-white'
+        }`}
+      >
+        <div className={`p-3 ${
+          darkMode ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
+          <span className={`font-medium ${
+            darkMode ? 'text-white' : 'text-gray-900'
+          }`}>
+            {card.title}
+          </span>
+        </div>
+        {card.content && (
+          <div className={`p-3 border-t ${
+            darkMode ? 'border-gray-600' : 'border-gray-200'
+          }`}>
+            <div className={`text-sm ${
+              darkMode ? 'text-gray-200' : 'text-gray-800'
+            }`}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkBreaks]}
+                components={markdownComponents}
+              >
+                {card.content.replace(/\n/g, '  \n')}
+              </ReactMarkdown>
+            </div>
+          </div>
+        )}
+      </div>
+    ))
+
   return (
     <div className={`flex-1 flex flex-col ${
       darkMode ? 'bg-gray-900' : 'bg-white'
@@ -132,61 +290,118 @@ export function Chat({ darkMode }: ChatProps) {
             </div>
           ) : (
             /* Messages */
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 animate-in slide-in-from-bottom-2 duration-300 ${
-                  message.sender === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {message.sender === 'assistant' && (
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    darkMode ? 'bg-blue-600' : 'bg-blue-500'
-                  }`}>
-                    <Bot size={16} className="text-white" />
+            messages.map((message, i) => {
+              const isUser = message.sender === 'user'
+              const isProcessing = message.type === 'ai-processing'
+              const isAiResponse = message.type === 'ai-response'
+
+              if (isProcessing && i === messages.length - 1) {
+                return (
+                  <div key={message.id} className="flex justify-start">
+                    <div className="w-full max-w-[90%] space-y-3">
+                      {renderCards(message.cards || [])}
+                    </div>
                   </div>
-                )}
+                )
+              }
+
+              if (isAiResponse) {
+                return (
+                  <div key={message.id} className="flex justify-start">
+                    <div className="w-full max-w-[90%] space-y-3">
+                      {renderCards(message.cards || [])}
+
+                      {message.finalCard && (
+                        <div
+                          className={`border rounded-lg ${
+                            darkMode
+                              ? 'border-gray-600 bg-gray-800'
+                              : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <div
+                            className={`p-3 font-medium rounded-t-lg ${
+                              darkMode
+                                ? 'text-white bg-yellow-900/30'
+                                : 'text-gray-900 bg-yellow-100/50'
+                            } flex items-center gap-2`}
+                          >
+                            {message.finalCard.title}
+                          </div>
+                          <div
+                            className={`px-3 py-3 border-t ${
+                              darkMode ? 'border-gray-600' : 'border-gray-200'
+                            }`}
+                          >
+                            <div
+                              className={`text-sm ${
+                                darkMode ? 'text-gray-200' : 'text-gray-800'
+                              }`}
+                            >
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm, remarkBreaks]}
+                                components={markdownComponents}
+                              >
+                                {message.finalCard.content.replace(/\n/g, '  \n')}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
                 <div
-                  className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
-                    message.sender === 'user'
-                      ? 'text-white'
-                      : darkMode
-                      ? 'bg-gray-700 text-white'
-                      : 'bg-gray-200 text-gray-900'
+                  key={message.id}
+                  className={`flex gap-3 animate-in slide-in-from-bottom-2 duration-300 ${
+                    isUser ? 'justify-end' : 'justify-start'
                   }`}
-                  style={message.sender === 'user' ? { backgroundColor: 'var(--primary)' } : {}}
                 >
-                  {message.sender === 'user' ? (
-                    <p className="text-sm">{message.content}</p>
-                  ) : (
-                    <div className={`prose prose-sm max-w-none ${
-                      darkMode ? 'prose-invert' : ''
+                  {!isUser && (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      darkMode ? 'bg-blue-600' : 'bg-blue-500'
                     }`}>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkBreaks]}
-                        components={{
-                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                          ul: ({ children }) => <ul className={`mb-2 last:mb-0 ml-4 space-y-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{children}</ul>,
-                          ol: ({ children }) => <ol className={`list-decimal list-inside mb-2 last:mb-0 ml-4 space-y-1 ${darkMode ? 'text-white' : 'text-gray-800'}`}>{children}</ol>,
-                          li: ({ children }) => <li className={`${darkMode ? 'text-white' : 'text-gray-800'} flex items-start`}><span className="mr-2 font-bold text-lg">•</span><span className="flex-1">{children}</span></li>,
-                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                          code: ({ children }) => <code className={`px-1 py-0.5 rounded text-xs ${darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>{children}</code>,
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      <Bot size={16} className="text-white" />
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
+                      isUser
+                        ? 'text-white'
+                        : darkMode
+                        ? 'bg-gray-700 text-white'
+                        : 'bg-gray-200 text-gray-900'
+                    }`}
+                    style={isUser ? { backgroundColor: 'var(--primary)' } : {}}
+                  >
+                    {isUser ? (
+                      <p className="text-sm">{message.content}</p>
+                    ) : (
+                      <div className={`prose prose-sm max-w-none ${
+                        darkMode ? 'prose-invert' : ''
+                      }`}>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkBreaks]}
+                          components={markdownComponents}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                  {isUser && (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      darkMode ? 'bg-gray-600' : 'bg-gray-400'
+                    }`}>
+                      <User size={16} className="text-white" />
                     </div>
                   )}
                 </div>
-                {message.sender === 'user' && (
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    darkMode ? 'bg-gray-600' : 'bg-gray-400'
-                  }`}>
-                    <User size={16} className="text-white" />
-                  </div>
-                )}
-              </div>
-            ))
+              )
+            })
           )}
           
           {/* Typing indicator */}
