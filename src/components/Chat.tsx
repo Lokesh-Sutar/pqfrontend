@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, User, Bot } from 'lucide-react'
+import { Send, ChevronDown, ChevronUp } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -28,6 +28,7 @@ export function Chat({ darkMode }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -65,6 +66,52 @@ export function Chat({ darkMode }: ChatProps) {
       )
 
       let responseContent = ''
+      let currentCards: AgentCard[] = []
+
+      // Handle team-level tool events (delegation)
+      eventSource.addEventListener('tool', (event) => {
+        const data = JSON.parse(event.data)
+
+        if (data.event === 'TeamToolCallStarted') {
+          const toolName = data.payload?.tool?.tool_name
+          const memberId = data.payload?.tool?.tool_args?.member_id
+          const taskDescription = data.payload?.tool?.tool_args?.task_description
+
+          if (toolName === 'delegate_task_to_member' && memberId) {
+            let title = ''
+            if (memberId === 'agent-1') title = 'Finance Agent'
+            else if (memberId === 'agent-2') title = 'Sentiment Agent'
+            else if (memberId === 'agent-3') title = 'Advisory Agent'
+            else if (memberId === 'agent-4') title = 'Search Agent'
+
+            if (title) {
+              const newCard: AgentCard = {
+                id: `card-${memberId}-${Date.now()}`,
+                title: title,
+                content: ''
+              }
+              currentCards = [...currentCards, newCard]
+            }
+          }
+        }
+
+        if (data.event === 'TeamToolCallCompleted') {
+          const toolName = data.payload?.tool?.tool_name
+          const result = data.payload?.tool?.result
+          const memberId = data.payload?.tool?.tool_args?.member_id
+
+          if (toolName === 'delegate_task_to_member' && result && memberId) {
+            const memberCards = currentCards.filter(card => card.id.includes(memberId))
+            const latestMemberCard = memberCards[memberCards.length - 1]
+
+            currentCards = currentCards.map(card => 
+              card.id === latestMemberCard?.id
+                ? { ...card, content: result }
+                : card
+            )
+          }
+        }
+      })
 
       eventSource.addEventListener('run', (event) => {
         const data = JSON.parse(event.data)
@@ -75,9 +122,12 @@ export function Chat({ darkMode }: ChatProps) {
           
           const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
-            content: responseContent,
+            content: '',
             sender: 'assistant',
-            timestamp: new Date()
+            timestamp: new Date(),
+            type: 'ai-response',
+            cards: currentCards,
+            finalCard: { title: 'Conductor', content: responseContent }
           }
           setMessages(prev => [...prev, aiResponse])
           eventSource.close()
@@ -228,44 +278,67 @@ export function Chat({ darkMode }: ChatProps) {
     ),
   }
 
+  const toggleCardExpansion = (cardId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId)
+      } else {
+        newSet.add(cardId)
+      }
+      return newSet
+    })
+  }
+
   // Render agent cards
   const renderCards = (cards: AgentCard[]) =>
-    cards?.map((card) => (
-      <div
-        key={card.id}
-        className={`border rounded-lg ${
-          darkMode
-            ? 'border-gray-600 bg-gray-800'
-            : 'border-gray-200 bg-white'
-        }`}
-      >
-        <div className={`p-3 ${
-          darkMode ? 'bg-gray-700' : 'bg-gray-100'
-        }`}>
-          <span className={`font-medium ${
-            darkMode ? 'text-white' : 'text-gray-900'
-          }`}>
-            {card.title}
-          </span>
-        </div>
-        {card.content && (
-          <div className={`p-3 border-t ${
-            darkMode ? 'border-gray-600' : 'border-gray-200'
-          }`}>
-            <div className={`text-sm ${
-              darkMode ? 'text-gray-200' : 'text-gray-800'
+    cards?.map((card) => {
+      const isExpanded = expandedCards.has(card.id)
+      return (
+        <div
+          key={card.id}
+          className={`border rounded-lg ${
+            darkMode
+              ? 'border-gray-600 bg-gray-800'
+              : 'border-gray-200 bg-white'
+          }`}
+        >
+          <div
+            className={`p-3 cursor-pointer flex items-center justify-between ${
+              darkMode ? 'bg-gray-700' : 'bg-gray-100'
+            }`}
+            onClick={() => toggleCardExpansion(card.id)}
+          >
+            <span className={`font-medium ${
+              darkMode ? 'text-white' : 'text-gray-900'
             }`}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkBreaks]}
-                components={markdownComponents}
-              >
-                {card.content.replace(/\n/g, '  \n')}
-              </ReactMarkdown>
-            </div>
+              {card.title}
+            </span>
+            {isExpanded ? (
+              <ChevronUp size={16} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
+            ) : (
+              <ChevronDown size={16} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
+            )}
           </div>
-        )}
-      </div>
-    ))
+          {isExpanded && (
+            <div className={`p-3 border-t ${
+              darkMode ? 'border-gray-600' : 'border-gray-200'
+            }`}>
+              <div className={`text-sm ${
+                darkMode ? 'text-gray-200' : 'text-gray-800'
+              }`}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
+                  components={markdownComponents}
+                >
+                  {card.content.replace(/\n/g, '  \n')}
+                </ReactMarkdown>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    })
 
   return (
     <div className={`flex-1 flex flex-col ${
@@ -292,18 +365,7 @@ export function Chat({ darkMode }: ChatProps) {
             /* Messages */
             messages.map((message, i) => {
               const isUser = message.sender === 'user'
-              const isProcessing = message.type === 'ai-processing'
               const isAiResponse = message.type === 'ai-response'
-
-              if (isProcessing && i === messages.length - 1) {
-                return (
-                  <div key={message.id} className="flex justify-start">
-                    <div className="w-full max-w-[90%] space-y-3">
-                      {renderCards(message.cards || [])}
-                    </div>
-                  </div>
-                )
-              }
 
               if (isAiResponse) {
                 return (
@@ -320,11 +382,9 @@ export function Chat({ darkMode }: ChatProps) {
                           }`}
                         >
                           <div
-                            className={`p-3 font-medium rounded-t-lg ${
-                              darkMode
-                                ? 'text-white bg-yellow-900/30'
-                                : 'text-gray-900 bg-yellow-100/50'
-                            } flex items-center gap-2`}
+                            className={`p-3 font-medium ${
+                              darkMode ? 'text-white bg-gray-700' : 'text-gray-900 bg-gray-100'
+                            }`}
                           >
                             {message.finalCard.title}
                           </div>
@@ -356,17 +416,10 @@ export function Chat({ darkMode }: ChatProps) {
               return (
                 <div
                   key={message.id}
-                  className={`flex gap-3 animate-in slide-in-from-bottom-2 duration-300 ${
+                  className={`flex animate-in slide-in-from-bottom-2 duration-300 ${
                     isUser ? 'justify-end' : 'justify-start'
                   }`}
                 >
-                  {!isUser && (
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      darkMode ? 'bg-blue-600' : 'bg-blue-500'
-                    }`}>
-                      <Bot size={16} className="text-white" />
-                    </div>
-                  )}
                   <div
                     className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
                       isUser
@@ -392,13 +445,6 @@ export function Chat({ darkMode }: ChatProps) {
                       </div>
                     )}
                   </div>
-                  {isUser && (
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      darkMode ? 'bg-gray-600' : 'bg-gray-400'
-                    }`}>
-                      <User size={16} className="text-white" />
-                    </div>
-                  )}
                 </div>
               )
             })
@@ -406,12 +452,7 @@ export function Chat({ darkMode }: ChatProps) {
           
           {/* Typing indicator */}
           {isTyping && (
-            <div className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                darkMode ? 'bg-blue-600' : 'bg-blue-500'
-              }`}>
-                <Bot size={16} className="text-white" />
-              </div>
+            <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
               <div className={`px-4 py-3 rounded-lg ${
                 darkMode ? 'bg-gray-700' : 'bg-gray-200'
               }`}>
