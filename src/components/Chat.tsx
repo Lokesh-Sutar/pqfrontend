@@ -8,7 +8,7 @@ interface AgentCard {
   id: string
   title: string
   content: string
-  tools?: string[]
+  tools?: { name: string; startTime?: number; duration?: number }[]
 }
 
 interface Message {
@@ -30,8 +30,19 @@ export function Chat({ darkMode }: ChatProps) {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [, forceUpdate] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Timer to update running tool times
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isTyping) {
+        forceUpdate(prev => prev + 1)
+      }
+    }, 100)
+    return () => clearInterval(interval)
+  }, [isTyping])
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -128,9 +139,29 @@ export function Chat({ darkMode }: ChatProps) {
           if (latestCard) {
             currentCards = currentCards.map(card => 
               card.id === latestCard.id
-                ? { ...card, tools: [...(card.tools || []), toolName] }
+                ? { ...card, tools: [...(card.tools || []), { name: toolName, startTime: Date.now() }] }
                 : card
             )
+          }
+        }
+
+        if (data.event === 'ToolCallCompleted' && toolName && agentName) {
+          const agentCards = currentCards.filter(card => card.title === agentTitle)
+          const latestCard = agentCards[agentCards.length - 1]
+          const duration = data.payload?.tool?.metrics?.duration
+
+          if (latestCard) {
+            currentCards = currentCards.map(card => {
+              if (card.id === latestCard.id) {
+                const updatedTools = card.tools?.map(tool => 
+                  tool.name === toolName && !tool.duration
+                    ? { ...tool, duration }
+                    : tool
+                ) || []
+                return { ...card, tools: updatedTools }
+              }
+              return card
+            })
           }
         }
       }
@@ -368,16 +399,31 @@ export function Chat({ darkMode }: ChatProps) {
                     Tools Used:
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {card.tools.map((tool, idx) => (
-                      <span
-                        key={idx}
-                        className={`text-xs px-2 py-1 rounded ${
-                          darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {tool}
-                      </span>
-                    ))}
+                    {card.tools.map((tool, idx) => {
+                      const getTime = () => {
+                        if (tool.duration) {
+                          return `${tool.duration.toFixed(1)}s`
+                        } else if (tool.startTime) {
+                          const elapsed = (Date.now() - tool.startTime) / 1000
+                          return `${elapsed.toFixed(1)}s`
+                        }
+                        return '0.0s'
+                      }
+
+                      return (
+                        <span
+                          key={idx}
+                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
+                            darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          <span>{tool.name}</span>
+                          <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {getTime()}
+                          </span>
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
               )}
