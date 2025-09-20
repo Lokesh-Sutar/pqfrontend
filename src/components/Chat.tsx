@@ -8,6 +8,7 @@ interface AgentCard {
   id: string
   title: string
   content: string
+  tools?: string[]
 }
 
 interface Message {
@@ -88,7 +89,8 @@ export function Chat({ darkMode }: ChatProps) {
               const newCard: AgentCard = {
                 id: `card-${memberId}-${Date.now()}`,
                 title: title,
-                content: ''
+                content: '',
+                tools: []
               }
               currentCards = [...currentCards, newCard]
             }
@@ -111,6 +113,42 @@ export function Chat({ darkMode }: ChatProps) {
             )
           }
         }
+      })
+
+      // Handle individual agent tool events
+      const handleAgentTool = (event: MessageEvent, agentTitle: string) => {
+        const data = JSON.parse(event.data)
+        const toolName = data.payload?.tool?.tool_name
+        const agentName = data.payload?.agent_name
+
+        if (data.event === 'ToolCallStarted' && toolName && agentName) {
+          const agentCards = currentCards.filter(card => card.title === agentTitle)
+          const latestCard = agentCards[agentCards.length - 1]
+
+          if (latestCard) {
+            currentCards = currentCards.map(card => 
+              card.id === latestCard.id
+                ? { ...card, tools: [...(card.tools || []), toolName] }
+                : card
+            )
+          }
+        }
+      }
+
+      eventSource.addEventListener('tool-finance', (event) => {
+        handleAgentTool(event, 'Finance Agent')
+      })
+
+      eventSource.addEventListener('tool-sentiment', (event) => {
+        handleAgentTool(event, 'Sentiment Agent')
+      })
+
+      eventSource.addEventListener('tool-advisory', (event) => {
+        handleAgentTool(event, 'Advisory Agent')
+      })
+
+      eventSource.addEventListener('tool-search', (event) => {
+        handleAgentTool(event, 'Search Agent')
       })
 
       eventSource.addEventListener('run', (event) => {
@@ -324,6 +362,25 @@ export function Chat({ darkMode }: ChatProps) {
             <div className={`p-3 border-t ${
               darkMode ? 'border-gray-600' : 'border-gray-200'
             }`}>
+              {card.tools && card.tools.length > 0 && (
+                <div className="mb-3">
+                  <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Tools Used:
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {card.tools.map((tool, idx) => (
+                      <span
+                        key={idx}
+                        className={`text-xs px-2 py-1 rounded ${
+                          darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className={`text-sm ${
                 darkMode ? 'text-gray-200' : 'text-gray-800'
               }`}>
@@ -510,6 +567,8 @@ export function Chat({ darkMode }: ChatProps) {
           </div>
         </div>
       </div>
+
+
     </div>
   )
 }
