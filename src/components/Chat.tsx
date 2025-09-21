@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, ChevronDown, ChevronUp } from 'lucide-react'
+import { Send, ChevronDown, ChevronUp, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
@@ -8,7 +8,16 @@ interface AgentCard {
   id: string
   title: string
   content: string
-  tools?: { name: string; startTime?: number; duration?: number }[]
+  tools?: { name: string; startTime?: number; duration?: number; args?: any; result?: any }[]
+}
+
+interface ToolDetails {
+  name: string
+  duration?: number
+  startTime?: number
+  args?: any
+  result?: any
+  agent: string
 }
 
 interface Message {
@@ -30,6 +39,7 @@ export function Chat({ darkMode }: ChatProps) {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null)
   const [, forceUpdate] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -135,11 +145,12 @@ export function Chat({ darkMode }: ChatProps) {
         if (data.event === 'ToolCallStarted' && toolName && agentName) {
           const agentCards = currentCards.filter(card => card.title === agentTitle)
           const latestCard = agentCards[agentCards.length - 1]
+          const toolArgs = data.payload?.tool?.tool_args
 
           if (latestCard) {
             currentCards = currentCards.map(card => 
               card.id === latestCard.id
-                ? { ...card, tools: [...(card.tools || []), { name: toolName, startTime: Date.now() }] }
+                ? { ...card, tools: [...(card.tools || []), { name: toolName, startTime: Date.now(), args: toolArgs }] }
                 : card
             )
           }
@@ -149,13 +160,14 @@ export function Chat({ darkMode }: ChatProps) {
           const agentCards = currentCards.filter(card => card.title === agentTitle)
           const latestCard = agentCards[agentCards.length - 1]
           const duration = data.payload?.tool?.metrics?.duration
+          const result = data.payload?.tool?.result
 
           if (latestCard) {
             currentCards = currentCards.map(card => {
               if (card.id === latestCard.id) {
                 const updatedTools = card.tools?.map(tool => 
                   tool.name === toolName && !tool.duration
-                    ? { ...tool, duration }
+                    ? { ...tool, duration, result }
                     : tool
                 ) || []
                 return { ...card, tools: updatedTools }
@@ -413,9 +425,17 @@ export function Chat({ darkMode }: ChatProps) {
                       return (
                         <span
                           key={idx}
-                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
+                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:opacity-80 ${
                             darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
                           }`}
+                          onClick={() => setSelectedTool({
+                            name: tool.name,
+                            duration: tool.duration,
+                            startTime: tool.startTime,
+                            args: tool.args,
+                            result: tool.result,
+                            agent: card.title
+                          })}
                         >
                           <span>{tool.name}</span>
                           <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -614,7 +634,84 @@ export function Chat({ darkMode }: ChatProps) {
         </div>
       </div>
 
-
+      {/* Simple tool details popup */}
+      {selectedTool && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setSelectedTool(null)}
+        >
+          <div
+            className={`w-196 max-h-196 rounded-lg shadow-xl p-4 overflow-y-auto ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Tool Details
+              </h3>
+              <button
+                onClick={() => setSelectedTool(null)}
+                className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Name:
+                </label>
+                <p className={`mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {selectedTool.name}
+                </p>
+              </div>
+              <div>
+                <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Agent:
+                </label>
+                <p className={`mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {selectedTool.agent}
+                </p>
+              </div>
+              {selectedTool.duration && (
+                <div>
+                  <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Duration:
+                  </label>
+                  <p className={`mt-1 ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                    {selectedTool.duration.toFixed(2)}s
+                  </p>
+                </div>
+              )}
+              {selectedTool.args && (
+                <div>
+                  <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Arguments:
+                  </label>
+                  <pre className={`mt-1 text-xs p-2 rounded overflow-x-auto ${
+                    darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {JSON.stringify(selectedTool.args, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {selectedTool.result && (
+                <div>
+                  <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Result:
+                  </label>
+                  <pre className={`mt-1 text-xs p-2 rounded overflow-x-auto ${
+                    darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {typeof selectedTool.result === 'string' ? selectedTool.result : JSON.stringify(selectedTool.result, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
