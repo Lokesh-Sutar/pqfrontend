@@ -54,6 +54,17 @@ export function Chat({ darkMode }: ChatProps) {
     return () => clearInterval(interval)
   }, [isTyping])
 
+  // ESC key to close popup
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedTool) {
+        setSelectedTool(null)
+      }
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [selectedTool])
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom()
@@ -410,7 +421,7 @@ export function Chat({ darkMode }: ChatProps) {
                   <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Tools Used:
                   </div>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="space-y-1">
                     {card.tools.map((tool, idx) => {
                       const getTime = () => {
                         if (tool.duration) {
@@ -423,9 +434,9 @@ export function Chat({ darkMode }: ChatProps) {
                       }
 
                       return (
-                        <span
+                        <div
                           key={idx}
-                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 cursor-pointer hover:opacity-80 ${
+                          className={`text-sm px-2 py-1 rounded flex justify-between items-center cursor-pointer hover:opacity-80 hover:scale-102 transition-transform duration-200 ${
                             darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
                           }`}
                           onClick={() => setSelectedTool({
@@ -441,7 +452,7 @@ export function Chat({ darkMode }: ChatProps) {
                           <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             {getTime()}
                           </span>
-                        </span>
+                        </div>
                       )
                     })}
                   </div>
@@ -634,78 +645,92 @@ export function Chat({ darkMode }: ChatProps) {
         </div>
       </div>
 
-      {/* Simple tool details popup */}
+      {/* Tool details popup */}
       {selectedTool && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
           onClick={() => setSelectedTool(null)}
         >
           <div
-            className={`w-196 max-h-196 rounded-lg shadow-xl p-4 overflow-y-auto ${
-              darkMode ? 'bg-gray-800' : 'bg-white'
-            }`}
+            className={`w-[80%] h-[80%] rounded-xl shadow-2xl ${
+              darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+            } border-2 flex flex-col overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`flex items-center justify-between p-6 border-b ${
+              darkMode ? 'border-gray-600' : 'border-gray-200'
+            }`}>
+              <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Tool Details
               </h3>
               <button
                 onClick={() => setSelectedTool(null)}
-                className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                className={`p-2 rounded hover:bg-opacity-80 ${
+                  darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                }`}
               >
-                <X size={18} />
+                <X size={24} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
               </button>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Name:
-                </label>
-                <p className={`mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {selectedTool.name}
-                </p>
-              </div>
-              <div>
-                <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Agent:
-                </label>
-                <p className={`mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {selectedTool.agent}
-                </p>
-              </div>
-              {selectedTool.duration && (
-                <div>
+            <div className="p-6 flex flex-col h-full overflow-hidden">
+              <div className="grid grid-cols-8 gap-6">
+                <div className="col-span-2">
                   <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Duration:
+                    Name:
                   </label>
-                  <p className={`mt-1 ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                    {selectedTool.duration.toFixed(2)}s
+                  <p className={`mt-2 text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedTool.name}
                   </p>
                 </div>
-              )}
-              {selectedTool.args && (
-                <div>
+                <div className="col-span-1">
                   <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Arguments:
+                    Status:
                   </label>
-                  <pre className={`mt-1 text-xs p-2 rounded overflow-x-auto ${
-                    darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
+                  <p className={`mt-2 text-lg font-semibold ${
+                    selectedTool.duration
+                      ? darkMode ? 'text-green-400' : 'text-green-600'
+                      : darkMode ? 'text-yellow-400' : 'text-yellow-600'
                   }`}>
-                    {JSON.stringify(selectedTool.args, null, 2)}
-                  </pre>
+                    {selectedTool.duration ? 'Completed' : 'Running'}
+                  </p>
                 </div>
-              )}
+                {selectedTool.duration && (
+                  <div className="col-span-1">
+                    <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Duration:
+                    </label>
+                    <p className={`mt-2 text-lg font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                      {selectedTool.duration.toFixed(4)}s
+                    </p>
+                  </div>
+                )}
+                {selectedTool.args && (
+                  <div className="col-span-4">
+                    <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Arguments:
+                    </label>
+                    <div className={`mt-2 p-3 rounded-lg text-sm ${
+                      darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      <pre className="whitespace-pre-wrap">
+                        {JSON.stringify(selectedTool.args, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
               {selectedTool.result && (
-                <div>
+                <div className="mt-6 flex flex-col gap-2 overflow-hidden">
                   <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Result:
                   </label>
-                  <pre className={`mt-1 text-xs p-2 rounded overflow-x-auto ${
+                  <div className={`p-4 rounded-lg overflow-y-auto ${
                     darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {typeof selectedTool.result === 'string' ? selectedTool.result : JSON.stringify(selectedTool.result, null, 2)}
-                  </pre>
+                    <pre className="text-sm whitespace-pre-wrap">
+                      {typeof selectedTool.result === 'string' ? selectedTool.result : JSON.stringify(selectedTool.result, null, 2)}
+                    </pre>
+                  </div>
                 </div>
               )}
             </div>
