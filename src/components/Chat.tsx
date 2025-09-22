@@ -125,6 +125,29 @@ export function Chat({ darkMode }: ChatProps) {
                 tools: []
               }
               currentCards = [...currentCards, newCard]
+              
+              // Update messages immediately to show live processing
+              setMessages(prev => {
+                const lastMsg = prev[prev.length - 1]
+                if (lastMsg && lastMsg.type === 'ai-processing') {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...lastMsg, cards: currentCards }
+                  ]
+                } else {
+                  return [
+                    ...prev,
+                    { 
+                      id: (Date.now() + 2).toString(),
+                      content: '',
+                      sender: 'assistant' as const,
+                      timestamp: new Date(),
+                      type: 'ai-processing' as const,
+                      cards: currentCards
+                    }
+                  ]
+                }
+              })
             }
           }
         }
@@ -143,6 +166,18 @@ export function Chat({ darkMode }: ChatProps) {
                 ? { ...card, content: result }
                 : card
             )
+            
+            // Update messages immediately to show live updates
+            setMessages(prev => {
+              const lastMsg = prev[prev.length - 1]
+              if (lastMsg && lastMsg.type === 'ai-processing') {
+                return [
+                  ...prev.slice(0, -1),
+                  { ...lastMsg, cards: currentCards }
+                ]
+              }
+              return prev
+            })
           }
         }
       })
@@ -164,6 +199,18 @@ export function Chat({ darkMode }: ChatProps) {
                 ? { ...card, tools: [...(card.tools || []), { name: toolName, startTime: Date.now(), args: toolArgs }] }
                 : card
             )
+            
+            // Update messages immediately to show live tool execution
+            setMessages(prev => {
+              const lastMsg = prev[prev.length - 1]
+              if (lastMsg && lastMsg.type === 'ai-processing') {
+                return [
+                  ...prev.slice(0, -1),
+                  { ...lastMsg, cards: currentCards }
+                ]
+              }
+              return prev
+            })
           }
         }
 
@@ -184,6 +231,18 @@ export function Chat({ darkMode }: ChatProps) {
                 return { ...card, tools: updatedTools }
               }
               return card
+            })
+            
+            // Update messages immediately to show live tool completion
+            setMessages(prev => {
+              const lastMsg = prev[prev.length - 1]
+              if (lastMsg && lastMsg.type === 'ai-processing') {
+                return [
+                  ...prev.slice(0, -1),
+                  { ...lastMsg, cards: currentCards }
+                ]
+              }
+              return prev
             })
           }
         }
@@ -500,6 +559,17 @@ export function Chat({ darkMode }: ChatProps) {
             messages.map((message, i) => {
               const isUser = message.sender === 'user'
               const isAiResponse = message.type === 'ai-response'
+              const isProcessing = message.type === 'ai-processing'
+
+              if (isProcessing && i === messages.length - 1) {
+                return (
+                  <div key={i} className="flex justify-start">
+                    <div className="w-full max-w-[90%] space-y-3">
+                      {renderCards(message.cards || [])}
+                    </div>
+                  </div>
+                )
+              }
 
               if (isAiResponse) {
                 return (
@@ -547,6 +617,10 @@ export function Chat({ darkMode }: ChatProps) {
                 )
               }
 
+              if (isProcessing || !message.content.trim()) {
+                return null
+              }
+
               return (
                 <div
                   key={message.id}
@@ -585,7 +659,7 @@ export function Chat({ darkMode }: ChatProps) {
           )}
           
           {/* Typing indicator */}
-          {isTyping && (
+          {isTyping && messages.length > 0 && messages[messages.length - 1]?.type !== 'ai-response' && (
             <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
               <div className={`px-4 py-3 rounded-lg ${
                 darkMode ? 'bg-gray-700' : 'bg-gray-200'
