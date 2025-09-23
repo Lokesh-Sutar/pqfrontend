@@ -38,7 +38,7 @@ export function Chat({ darkMode }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [expandedCards, setExpandedCards] = useState<{[key: string]: boolean}>({})
   const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null)
   const [, forceUpdate] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -125,6 +125,9 @@ export function Chat({ darkMode }: ChatProps) {
                 tools: []
               }
               currentCards = [...currentCards, newCard]
+              
+              // Auto-expand processing cards
+              setExpandedCards(prev => ({ ...prev, [newCard.id]: true }))
               
               // Update messages immediately to show live processing
               setMessages(prev => {
@@ -270,6 +273,15 @@ export function Chat({ darkMode }: ChatProps) {
         if (data.event === 'TeamRunCompleted') {
           setIsTyping(false)
           responseContent = data.payload?.content || 'No response received'
+          
+          // Close processing cards when completed
+          setExpandedCards(prev => {
+            const newState = { ...prev }
+            currentCards.forEach(card => {
+              delete newState[card.id]
+            })
+            return newState
+          })
           
           const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
@@ -430,21 +442,16 @@ export function Chat({ darkMode }: ChatProps) {
   }
 
   const toggleCardExpansion = (cardId: string) => {
-    setExpandedCards(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(cardId)) {
-        newSet.delete(cardId)
-      } else {
-        newSet.add(cardId)
-      }
-      return newSet
-    })
+    setExpandedCards(prev => ({
+      ...prev,
+      [cardId]: !prev[cardId]
+    }))
   }
 
   // Render agent cards
   const renderCards = (cards: AgentCard[]) =>
     cards?.map((card) => {
-      const isExpanded = expandedCards.has(card.id)
+      const isExpanded = expandedCards[card.id]
       return (
         <div
           key={card.id}
