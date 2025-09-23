@@ -658,23 +658,23 @@ export function Chat({ darkMode }: ChatProps) {
             })
           )}
           
-          {/* Typing indicator */}
+          {/* Loading indicator */}
           {isTyping && messages.length > 0 && messages[messages.length - 1]?.type !== 'ai-response' && (
-            <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
-              <div className={`px-4 py-3 rounded-lg ${
-                darkMode ? 'bg-gray-700' : 'bg-gray-200'
+            <div className="flex justify-start">
+              <div className={`p-4 rounded-2xl ${
+                darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900'
               }`}>
-                <div className="flex space-x-1">
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    darkMode ? 'bg-gray-400' : 'bg-gray-500'
-                  }`} style={{ animationDelay: '0ms' }}></div>
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    darkMode ? 'bg-gray-400' : 'bg-gray-500'
-                  }`} style={{ animationDelay: '150ms' }}></div>
-                  <div className={`w-2 h-2 rounded-full animate-bounce ${
-                    darkMode ? 'bg-gray-400' : 'bg-gray-500'
-                  }`} style={{ animationDelay: '300ms' }}></div>
-                </div>
+                <span className="inline-flex">
+                  {'Working...'.split('').map((char, i) => (
+                    <span
+                      key={i}
+                      className="animate-pulse"
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      {char}
+                    </span>
+                  ))}
+                </span>
               </div>
             </div>
           )}
