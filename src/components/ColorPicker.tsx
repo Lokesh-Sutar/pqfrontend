@@ -45,7 +45,7 @@ export function ColorPicker({ color, onChange, onConfirm, onReset, darkMode }: C
       {/* Color picker popover */}
       {isOpen && (
         <div className={`absolute top-12 right-0 p-3 rounded-lg shadow-lg border z-50 ${
-          darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+          darkMode ? 'bg-neutral-800 border-gray-600' : 'bg-white border-gray-200'
         }`}>
           {/* Color picker widget */}
           <HexColorPicker color={color} onChange={onChange} />

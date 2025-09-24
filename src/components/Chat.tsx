@@ -344,27 +344,27 @@ export function Chat({ darkMode }: ChatProps) {
       </h2>
     ),
     h3: ({ children }: any) => (
-      <h3 className={`text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+      <h3 className={`text-sm font-medium mb-1 ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
         {children}
       </h3>
     ),
     p: ({ children }: any) => (
-      <p className={`mb-2 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+      <p className={`mb-2 ${darkMode ? 'text-neutral-200' : 'text-gray-800'}`}>
         {children}
       </p>
     ),
     ul: ({ children }: any) => (
-      <ul className={`mb-2 ml-4 space-y-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+      <ul className={`mb-2 ml-4 space-y-1 ${darkMode ? 'text-neutral-200' : 'text-gray-800'}`}>
         {children}
       </ul>
     ),
     ol: ({ children }: any) => (
-      <ol className={`list-decimal list-inside mb-2 ml-4 space-y-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+      <ol className={`list-decimal list-inside mb-2 ml-4 space-y-1 ${darkMode ? 'text-neutral-200' : 'text-gray-800'}`}>
         {children}
       </ol>
     ),
     li: ({ children }: any) => (
-      <li className={`${darkMode ? 'text-gray-200' : 'text-gray-800'} flex items-start`}>
+      <li className={`${darkMode ? 'text-neutral-200' : 'text-gray-800'} flex items-start`}>
         <span className="mr-2 font-bold text-lg">•</span>
         <span className="flex-1">{children}</span>
       </li>
@@ -375,68 +375,68 @@ export function Chat({ darkMode }: ChatProps) {
       </strong>
     ),
     em: ({ children }: any) => (
-      <em className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+      <em className={`italic ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
         {children}
       </em>
     ),
     code: ({ children }: any) => (
       <code className={`px-1 py-0.5 rounded text-xs font-mono ${
-        darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-800'
+        darkMode ? 'bg-neutral-600 text-neutral-200' : 'bg-gray-200 text-gray-800'
       }`}>
         {children}
       </code>
     ),
     pre: ({ children }: any) => (
       <pre className={`p-3 rounded-lg overflow-x-auto text-sm font-mono mb-2 ${
-        darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-800'
+        darkMode ? 'bg-neutral-600 text-neutral-200' : 'bg-gray-200 text-gray-800'
       }`}>
         {children}
       </pre>
     ),
     blockquote: ({ children }: any) => (
       <blockquote className={`border-l-4 pl-4 italic mb-2 ${
-        darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-600'
+        darkMode ? 'border-neutral-600 text-neutral-300' : 'border-gray-300 text-gray-600'
       }`}>
         {children}
       </blockquote>
     ),
     table: ({ children }: any) => (
       <table className={`min-w-full mb-4 border-collapse ${
-        darkMode ? 'border-gray-600' : 'border-gray-300'
+        darkMode ? 'border-neutral-600' : 'border-gray-300'
       }`}>
         {children}
       </table>
     ),
     thead: ({ children }: any) => (
-      <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+      <thead className={`${darkMode ? 'bg-neutral-700' : 'bg-gray-100'}`}>
         {children}
       </thead>
     ),
     tbody: ({ children }: any) => <tbody>{children}</tbody>,
     tr: ({ children }: any) => (
       <tr className={`border-b ${
-        darkMode ? 'border-gray-600' : 'border-gray-300'
+        darkMode ? 'border-neutral-600' : 'border-gray-300'
       }`}>
         {children}
       </tr>
     ),
     th: ({ children }: any) => (
       <th className={`px-3 py-2 text-left font-semibold ${
-        darkMode ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'
+        darkMode ? 'text-white border-neutral-600' : 'text-gray-900 border-gray-300'
       } border`}>
         {children}
       </th>
     ),
     td: ({ children }: any) => (
       <td className={`px-3 py-2 ${
-        darkMode ? 'text-gray-200 border-gray-600' : 'text-gray-800 border-gray-300'
+        darkMode ? 'text-neutral-200 border-neutral-600' : 'text-gray-800 border-gray-300'
       } border`}>
         {children}
       </td>
     ),
     hr: () => (
       <hr className={`my-3 ${
-        darkMode ? 'border-gray-600' : 'border-gray-300'
+        darkMode ? 'border-neutral-600' : 'border-gray-300'
       }`} />
     ),
   }
@@ -457,13 +457,13 @@ export function Chat({ darkMode }: ChatProps) {
           key={card.id}
           className={`border rounded-lg ${
             darkMode
-              ? 'border-gray-600 bg-gray-800'
+              ? 'border-neutral-600 bg-neutral-800'
               : 'border-gray-200 bg-white'
           }`}
         >
           <div
             className={`p-3 cursor-pointer flex items-center justify-between ${
-              darkMode ? 'bg-gray-700' : 'bg-gray-100'
+              darkMode ? 'bg-neutral-700' : 'bg-gray-100'
             }`}
             onClick={() => toggleCardExpansion(card.id)}
           >
@@ -473,18 +473,18 @@ export function Chat({ darkMode }: ChatProps) {
               {card.title}
             </span>
             {isExpanded ? (
-              <ChevronUp size={16} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
+              <ChevronUp size={16} className={darkMode ? 'text-neutral-400' : 'text-gray-600'} />
             ) : (
-              <ChevronDown size={16} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
+              <ChevronDown size={16} className={darkMode ? 'text-neutral-400' : 'text-gray-600'} />
             )}
           </div>
           {isExpanded && (
             <div className={`p-3 border-t ${
-              darkMode ? 'border-gray-600' : 'border-gray-200'
+              darkMode ? 'border-neutral-600' : 'border-gray-200'
             }`}>
               {card.tools && card.tools.length > 0 && (
                 <div className="mb-3">
-                  <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
                     Tools Used:
                   </div>
                   <div className="space-y-1">
@@ -503,7 +503,7 @@ export function Chat({ darkMode }: ChatProps) {
                         <div
                           key={idx}
                           className={`text-sm px-2 py-1 rounded flex justify-between items-center cursor-pointer hover:opacity-80 hover:scale-102 transition-transform duration-200 ${
-                            darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
+                            darkMode ? 'bg-neutral-700 text-neutral-200' : 'bg-gray-100 text-gray-700'
                           }`}
                           onClick={() => setSelectedTool({
                             name: tool.name,
@@ -515,7 +515,7 @@ export function Chat({ darkMode }: ChatProps) {
                           })}
                         >
                           <span>{tool.name}</span>
-                          <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <span className={`text-xs ${darkMode ? 'text-neutral-400' : 'text-gray-500'}`}>
                             {getTime()}
                           </span>
                         </div>
@@ -525,7 +525,7 @@ export function Chat({ darkMode }: ChatProps) {
                 </div>
               )}
               <div className={`text-sm ${
-                darkMode ? 'text-gray-200' : 'text-gray-800'
+                darkMode ? 'text-neutral-200' : 'text-gray-800'
               }`}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -542,7 +542,7 @@ export function Chat({ darkMode }: ChatProps) {
 
   return (
     <div className={`flex-1 flex flex-col ${
-      darkMode ? 'bg-gray-900' : 'bg-white'
+      darkMode ? 'bg-neutral-900' : 'bg-white'
     }`}>
       {/* Chat messages area */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -588,13 +588,13 @@ export function Chat({ darkMode }: ChatProps) {
                         <div
                           className={`border rounded-lg ${
                             darkMode
-                              ? 'border-gray-600 bg-gray-800'
+                              ? 'border-gray-600 bg-neutral-800'
                               : 'border-gray-200 bg-white'
                           }`}
                         >
                           <div
                             className={`p-3 font-medium ${
-                              darkMode ? 'text-white bg-gray-700' : 'text-gray-900 bg-gray-100'
+                              darkMode ? 'text-white bg-neutral-700' : 'text-gray-900 bg-gray-100'
                             }`}
                           >
                             {message.finalCard.title}
@@ -640,7 +640,7 @@ export function Chat({ darkMode }: ChatProps) {
                       isUser
                         ? 'text-white'
                         : darkMode
-                        ? 'bg-gray-700 text-white'
+                        ? 'bg-neutral-700 text-white'
                         : 'bg-gray-200 text-gray-900'
                     }`}
                     style={isUser ? { backgroundColor: 'var(--primary)' } : {}}
@@ -669,7 +669,7 @@ export function Chat({ darkMode }: ChatProps) {
           {isTyping && messages.length > 0 && messages[messages.length - 1]?.type !== 'ai-response' && (
             <div className="flex justify-start">
               <div className={`p-4 rounded-2xl ${
-                darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900'
+                darkMode ? 'bg-neutral-800 text-white' : 'bg-gray-100 text-gray-900'
               }`}>
                 <span className="inline-flex">
                   {'Working...'.split('').map((char, i) => (
@@ -693,7 +693,7 @@ export function Chat({ darkMode }: ChatProps) {
 
       {/* Chat input area */}
       <div className={`border-t p-4 ${
-        darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'
+        darkMode ? 'border-neutral-700 bg-neutral-800' : 'border-gray-200 bg-gray-50'
       }`}>
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3">
@@ -706,7 +706,7 @@ export function Chat({ darkMode }: ChatProps) {
               placeholder="Type your message..."
               className={`flex-1 px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400' 
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
               }`}
             />
@@ -715,7 +715,7 @@ export function Chat({ darkMode }: ChatProps) {
               disabled={isTyping || !inputValue.trim()}
               className={`px-4 py-3 rounded-lg transition-all duration-200 text-white hover:scale-105 active:scale-95 ${
                 isTyping || !inputValue.trim()
-                  ? 'bg-gray-400 cursor-not-allowed'
+                  ? 'bg-neutral-400 cursor-not-allowed'
                   : 'hover:opacity-90'
               }`}
               style={!isTyping && inputValue.trim() ? { backgroundColor: 'var(--primary)' } : {}}
@@ -734,12 +734,12 @@ export function Chat({ darkMode }: ChatProps) {
         >
           <div
             className={`w-[80%] h-[80%] rounded-xl shadow-2xl ${
-              darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+              darkMode ? 'bg-neutral-800 border-neutral-600' : 'bg-white border-gray-200'
             } border-2 flex flex-col overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={`flex items-center justify-between p-6 border-b ${
-              darkMode ? 'border-gray-600' : 'border-gray-200'
+              darkMode ? 'border-neutral-600' : 'border-gray-200'
             }`}>
               <h3 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Tool Details
@@ -747,10 +747,10 @@ export function Chat({ darkMode }: ChatProps) {
               <button
                 onClick={() => setSelectedTool(null)}
                 className={`p-2 rounded hover:bg-opacity-80 ${
-                  darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  darkMode ? 'hover:bg-neutral-700' : 'hover:bg-gray-100'
                 }`}
               >
-                <X size={24} className={darkMode ? 'text-gray-400' : 'text-gray-600'} />
+                <X size={24} className={darkMode ? 'text-neutral-400' : 'text-gray-600'} />
               </button>
             </div>
             <div className="p-6 flex flex-col h-full overflow-hidden">
@@ -787,11 +787,11 @@ export function Chat({ darkMode }: ChatProps) {
                 )}
                 {selectedTool.args && (
                   <div className="col-span-4">
-                    <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`text-sm font-medium ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
                       Arguments:
                     </label>
                     <div className={`mt-2 p-3 rounded-lg text-sm ${
-                      darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
+                      darkMode ? 'bg-neutral-700 text-neutral-200' : 'bg-gray-100 text-gray-800'
                     }`}>
                       <pre className="whitespace-pre-wrap">
                         {JSON.stringify(selectedTool.args, null, 2)}
@@ -802,11 +802,11 @@ export function Chat({ darkMode }: ChatProps) {
               </div>
               {selectedTool.result && (
                 <div className="mt-6 flex flex-col gap-2 overflow-hidden">
-                  <label className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`text-sm font-medium ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
                     Result:
                   </label>
                   <div className={`p-4 rounded-lg overflow-y-auto ${
-                    darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'
+                    darkMode ? 'bg-neutral-700 text-neutral-200' : 'bg-gray-100 text-gray-800'
                   }`}>
                     <pre className="text-sm whitespace-pre-wrap">
                       {typeof selectedTool.result === 'string' ? selectedTool.result : JSON.stringify(selectedTool.result, null, 2)}
