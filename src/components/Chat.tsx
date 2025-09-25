@@ -4,55 +4,67 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 
+// Props interface for Chat component
+interface ChatProps {
+  darkMode: boolean;
+  onMessageSent?: () => void;
+  onToolsCompleted?: () => void;
+}
+
 interface AgentCard {
-  id: string
-  title: string
-  content: string
-  tools?: { name: string; startTime?: number; duration?: number; args?: any; result?: any }[]
+  id: string;
+  runId: string;
+  title: string;
+  tools: {
+    name: string;
+    duration?: number;
+    startTime?: number;
+    args?: any;
+    result?: any;
+  }[];
+  content: string;
+  taskDescription?: string;
+  startTime?: number;
+  totalDuration?: number;
 }
 
 interface ToolDetails {
-  name: string
-  duration?: number
-  startTime?: number
-  args?: any
-  result?: any
-  agent: string
+  name: string;
+  args?: any;
+  result?: any;
+  duration?: number;
+  agent: string;
 }
 
 interface Message {
-  id: string
-  content: string
-  sender: 'user' | 'assistant'
-  timestamp: Date
-  type?: 'user' | 'ai-processing' | 'ai-response'
-  cards?: AgentCard[]
-  finalCard?: { title: string; content: string; tickers?: string[] }
+  type: "user" | "ai-processing" | "ai-response";
+  content: string;
+  cards?: AgentCard[];
+  finalCard?: { title: string; content: string; tickers?: string[] };
+  tickers?: string[];
 }
 
-interface ChatProps {
-  darkMode: boolean
-}
+export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null);
+  const [, forceUpdate] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-export function Chat({ darkMode }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [expandedCards, setExpandedCards] = useState<{[key: string]: boolean}>({})
-  const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null)
-  const [, forceUpdate] = useState(0)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   // Timer to update running tool times
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isTyping) {
+      if (loading) {
         forceUpdate(prev => prev + 1)
       }
-    }, 100)
+    }, 100) // Update every 100ms
     return () => clearInterval(interval)
-  }, [isTyping])
+  }, [loading])
 
   // ESC key to close popup
   useEffect(() => {
@@ -68,34 +80,32 @@ export function Chat({ darkMode }: ChatProps) {
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom()
-  }, [messages, isTyping])
+  }, [messages, loading])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim() || isTyping) return
+  const sendMessage = async () => {
+    if (!input.trim()) return;
 
-    const userInput = inputValue
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: userInput,
-      sender: 'user',
-      timestamp: new Date()
-    }
+    const userMessage = input;
+    setMessages(prev => [
+      ...prev,
+      { type: "user", content: userMessage },
+      { type: "ai-processing", content: "", cards: [] },
+    ]);
+    setInput("");
+    setLoading(true);
 
-    setMessages(prev => [...prev, newMessage])
-    setInputValue('')
-    setIsTyping(true)
-    
-    // Keep input focused
-    inputRef.current?.focus()
+
+
+    onMessageSent?.();
 
     // Send message to backend API
     try {
       const eventSource = new EventSource(
-        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(userInput)}`
+        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(userMessage)}`
       )
 
       let responseContent = ''
@@ -271,7 +281,7 @@ export function Chat({ darkMode }: ChatProps) {
         const data = JSON.parse(event.data)
         
         if (data.event === 'TeamRunCompleted') {
-          setIsTyping(false)
+          setLoading(false)
           responseContent = data.payload?.content || 'No response received'
           
           // Close processing cards when completed
@@ -284,52 +294,33 @@ export function Chat({ darkMode }: ChatProps) {
           })
           
           const aiResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            content: '',
-            sender: 'assistant',
-            timestamp: new Date(),
             type: 'ai-response',
+            content: '',
             cards: currentCards,
             finalCard: { title: 'Conductor', content: responseContent }
           }
           setMessages(prev => [...prev, aiResponse])
+          onToolsCompleted?.()
           eventSource.close()
         }
       })
 
       eventSource.addEventListener('error', () => {
-        setIsTyping(false)
-        const errorResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          content: 'Sorry, I encountered an error while processing your request. Please try again.',
-          sender: 'assistant',
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, errorResponse])
+        setLoading(false)
         eventSource.close()
       })
 
       eventSource.addEventListener('end', () => {
-        setIsTyping(false)
+        setLoading(false)
         eventSource.close()
       })
     } catch (error) {
-      setIsTyping(false)
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: 'Failed to connect to the AI service. Please check your connection and try again.',
-        sender: 'assistant',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, errorResponse])
+      console.error('Failed to create EventSource:', error)
+      setLoading(false)
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isTyping) {
-      handleSendMessage()
-    }
-  }
+
 
   // Custom markdown components for consistent styling
   const markdownComponents = {
@@ -564,7 +555,7 @@ export function Chat({ darkMode }: ChatProps) {
           ) : (
             /* Messages */
             messages.map((message, i) => {
-              const isUser = message.sender === 'user'
+              const isUser = message.type === 'user'
               const isAiResponse = message.type === 'ai-response'
               const isProcessing = message.type === 'ai-processing'
 
@@ -580,7 +571,7 @@ export function Chat({ darkMode }: ChatProps) {
 
               if (isAiResponse) {
                 return (
-                  <div key={message.id} className="flex justify-start">
+                  <div key={i} className="flex justify-start">
                     <div className="w-full max-w-[90%] space-y-3">
                       {renderCards(message.cards || [])}
 
@@ -630,7 +621,7 @@ export function Chat({ darkMode }: ChatProps) {
 
               return (
                 <div
-                  key={message.id}
+                  key={i}
                   className={`flex animate-in slide-in-from-bottom-2 duration-300 ${
                     isUser ? 'justify-end' : 'justify-start'
                   }`}
@@ -666,7 +657,7 @@ export function Chat({ darkMode }: ChatProps) {
           )}
           
           {/* Loading indicator */}
-          {isTyping && messages.length > 0 && messages[messages.length - 1]?.type !== 'ai-response' && (
+          {loading && messages.length > 0 && messages[messages.length - 1]?.type !== 'ai-response' && (
             <div className="flex justify-start">
               <div className={`p-4 rounded-2xl ${
                 darkMode ? 'bg-neutral-800 text-white' : 'bg-gray-100 text-gray-900'
@@ -698,11 +689,15 @@ export function Chat({ darkMode }: ChatProps) {
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3">
             <input
-              ref={inputRef}
               type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !loading) {
+                  e.preventDefault()
+                  sendMessage()
+                }
+              }}
               placeholder="Type your message..."
               className={`flex-1 px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 darkMode 
@@ -711,14 +706,14 @@ export function Chat({ darkMode }: ChatProps) {
               }`}
             />
             <button
-              onClick={handleSendMessage}
-              disabled={isTyping || !inputValue.trim()}
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
               className={`px-4 py-3 rounded-lg transition-all duration-200 text-white hover:scale-105 active:scale-95 ${
-                isTyping || !inputValue.trim()
-                  ? 'bg-neutral-400 cursor-not-allowed'
+                loading || !input.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
                   : 'hover:opacity-90'
               }`}
-              style={!isTyping && inputValue.trim() ? { backgroundColor: 'var(--primary)' } : {}}
+              style={!loading && input.trim() ? { backgroundColor: 'var(--primary)' } : {}}
             >
               <Send size={20} />
             </button>
