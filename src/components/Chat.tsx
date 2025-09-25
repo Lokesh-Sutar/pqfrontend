@@ -3,6 +3,14 @@ import { Send, ChevronDown, ChevronUp, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faMoneyBillTrendUp,
+  faPeopleGroup,
+  faUserTie,
+  faMagnifyingGlass,
+  faClipboardList,
+} from '@fortawesome/free-solid-svg-icons'
 
 // Props interface for Chat component
 interface ChatProps {
@@ -453,20 +461,71 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
           }`}
         >
           <div
-            className={`p-3 cursor-pointer flex items-center justify-between ${
-              darkMode ? 'bg-neutral-700' : 'bg-gray-100'
+            className={`p-3 cursor-pointer flex items-center justify-between rounded-t-lg ${
+              card.title === 'Finance Agent'
+                ? darkMode
+                  ? 'bg-green-900/30 hover:bg-green-800/40'
+                  : 'bg-green-100/50 hover:bg-green-200/60'
+                : card.title === 'Sentiment Agent'
+                ? darkMode
+                  ? 'bg-orange-900/30 hover:bg-orange-800/40'
+                  : 'bg-orange-100/50 hover:bg-orange-200/60'
+                : card.title === 'Advisory Agent'
+                ? darkMode
+                  ? 'bg-blue-900/30 hover:bg-blue-800/40'
+                  : 'bg-blue-100/50 hover:bg-blue-200/60'
+                : card.title === 'Search Agent'
+                ? darkMode
+                  ? 'bg-neutral-700/30 hover:bg-neutral-600/40'
+                  : 'bg-gray-200/50 hover:bg-gray-300/60'
+                : darkMode
+                ? 'bg-neutral-700' : 'bg-gray-100'
             }`}
             onClick={() => toggleCardExpansion(card.id)}
           >
-            <span className={`font-medium ${
-              darkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              {card.title}
-            </span>
+            <div className="flex items-center gap-2">
+              {card.title === 'Finance Agent' && (
+                <FontAwesomeIcon
+                  icon={faMoneyBillTrendUp}
+                  className={`${
+                    darkMode ? 'text-green-400' : 'text-green-600'
+                  } ${!card.content ? 'animate-pulse' : ''}`}
+                />
+              )}
+              {card.title === 'Sentiment Agent' && (
+                <FontAwesomeIcon
+                  icon={faPeopleGroup}
+                  className={`${
+                    darkMode ? 'text-orange-400' : 'text-orange-600'
+                  } ${!card.content ? 'animate-pulse' : ''}`}
+                />
+              )}
+              {card.title === 'Advisory Agent' && (
+                <FontAwesomeIcon
+                  icon={faUserTie}
+                  className={`${
+                    darkMode ? 'text-blue-400' : 'text-blue-600'
+                  } ${!card.content ? 'animate-pulse' : ''}`}
+                />
+              )}
+              {card.title === 'Search Agent' && (
+                <FontAwesomeIcon
+                  icon={faMagnifyingGlass}
+                  className={`${
+                    darkMode ? 'text-gray-300' : 'text-gray-800'
+                  } ${!card.content ? 'animate-pulse' : ''}`}
+                />
+              )}
+              <span className={`font-medium ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                {card.title}
+              </span>
+            </div>
             {isExpanded ? (
-              <ChevronUp size={16} className={darkMode ? 'text-neutral-400' : 'text-gray-600'} />
+              <ChevronUp size={16} />
             ) : (
-              <ChevronDown size={16} className={darkMode ? 'text-neutral-400' : 'text-gray-600'} />
+              <ChevronDown size={16} />
             )}
           </div>
           {isExpanded && (
@@ -584,10 +643,18 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           }`}
                         >
                           <div
-                            className={`p-3 font-medium ${
-                              darkMode ? 'text-white bg-neutral-700' : 'text-gray-900 bg-gray-100'
-                            }`}
+                            className={`p-3 font-medium rounded-t-lg ${
+                              darkMode
+                                ? 'text-white bg-yellow-900/30'
+                                : 'text-gray-900 bg-yellow-100/50'
+                            } flex items-center gap-2`}
                           >
+                            <FontAwesomeIcon
+                              icon={faClipboardList}
+                              className={`${
+                                darkMode ? 'text-yellow-400' : 'text-yellow-600'
+                              }`}
+                            />
                             {message.finalCard.title}
                           </div>
                           <div
