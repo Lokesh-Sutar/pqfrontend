@@ -41,7 +41,7 @@ export function Header({ darkMode, onToggleDarkMode, tempColor, onColorChange, o
           onClick={onToggleDarkMode}
           className={`p-2 rounded-lg transition-all duration-200 ease-out hover:scale-110 active:scale-95 ${
             darkMode 
-              ? 'bg-neutral-800 text-gray-300 hover:bg-neutral-700' 
+              ? 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >

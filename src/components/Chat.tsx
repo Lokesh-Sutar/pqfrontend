@@ -574,9 +574,11 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
           {isExpanded && (
             <div className={`p-3 border-t ${
               darkMode ? 'border-neutral-600' : 'border-gray-200'
-            }`}>
+            } space-y-3`}>
               {card.tools && card.tools.length > 0 && (
-                <div className="mb-3">
+                <div className={`mb-3 pb-3 border-b ${
+                  darkMode ? 'border-neutral-600' : 'border-gray-300'
+                }`}>
                   <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
                     Tools Used:
                   </div>
@@ -617,16 +619,18 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   </div>
                 </div>
               )}
-              <div className={`text-sm ${
-                darkMode ? 'text-neutral-200' : 'text-gray-800'
-              }`}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkBreaks]}
-                  components={markdownComponents}
-                >
-                  {card.content.replace(/\n/g, '  \n')}
-                </ReactMarkdown>
-              </div>
+              {card.content && (
+                <div className={`text-sm ${
+                  darkMode ? 'text-neutral-200' : 'text-gray-800'
+                }`}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    components={markdownComponents}
+                  >
+                    {card.content.replace(/\n/g, '  \n')}
+                  </ReactMarkdown>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -637,8 +641,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     <div className={`flex-1 flex flex-col ${
       darkMode ? 'bg-neutral-900' : 'bg-white'
     }`}>
-      {/* Chat messages area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.length === 0 ? (
             /* Welcome message */

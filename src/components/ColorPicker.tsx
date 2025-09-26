@@ -39,7 +39,7 @@ export function ColorPicker({ color, onChange, onConfirm, onReset, darkMode }: C
         style={{ backgroundColor: color }}
         title="Primary Color"
       >
-        <Palette size={16} className="text-white" />
+        <Palette size={20} className="text-white" />
       </button>
       
       {/* Color picker popover */}
