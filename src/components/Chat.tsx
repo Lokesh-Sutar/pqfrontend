@@ -138,9 +138,12 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
             if (title) {
               const newCard: AgentCard = {
                 id: `card-${memberId}-${Date.now()}`,
+                runId: `run-${Date.now()}`,
                 title: title,
                 content: '',
-                tools: []
+                tools: [],
+                taskDescription: taskDescription || '',
+                startTime: Date.now()
               }
               currentCards = [...currentCards, newCard]
               
@@ -182,11 +185,20 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
             const memberCards = currentCards.filter(card => card.id.includes(memberId))
             const latestMemberCard = memberCards[memberCards.length - 1]
 
-            currentCards = currentCards.map(card => 
-              card.id === latestMemberCard?.id
-                ? { ...card, content: result }
-                : card
-            )
+            currentCards = currentCards.map(card => {
+              if (card.id === latestMemberCard?.id) {
+                const totalDuration = card.startTime
+                  ? (Date.now() - card.startTime) / 1000
+                  : undefined
+                return {
+                  ...card,
+                  content: result,
+                  taskDescription: undefined,
+                  totalDuration
+                }
+              }
+              return card
+            })
             
             // Update messages immediately to show live updates
             setMessages(prev => {
@@ -522,11 +534,42 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 {card.title}
               </span>
             </div>
-            {isExpanded ? (
-              <ChevronUp size={16} />
-            ) : (
-              <ChevronDown size={16} />
-            )}
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  card.title === 'Finance Agent'
+                    ? darkMode
+                      ? 'bg-green-900 text-green-300'
+                      : 'bg-green-200 text-green-800'
+                    : card.title === 'Sentiment Agent'
+                    ? darkMode
+                      ? 'bg-orange-900 text-orange-300'
+                      : 'bg-orange-200 text-orange-800'
+                    : card.title === 'Advisory Agent'
+                    ? darkMode
+                      ? 'bg-blue-900 text-blue-300'
+                      : 'bg-blue-200 text-blue-800'
+                    : card.title === 'Search Agent'
+                    ? darkMode
+                      ? 'bg-neutral-700 text-neutral-300'
+                      : 'bg-gray-300 text-gray-800'
+                    : darkMode
+                    ? 'bg-neutral-700 text-neutral-200'
+                    : 'bg-gray-300 text-gray-700'
+                }`}
+              >
+                {card.totalDuration
+                  ? `${card.totalDuration.toFixed(1)}s`
+                  : card.startTime
+                  ? `${((Date.now() - card.startTime) / 1000).toFixed(1)}s`
+                  : '0.0s'}
+              </span>
+              {isExpanded ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </div>
           </div>
           {isExpanded && (
             <div className={`p-3 border-t ${
