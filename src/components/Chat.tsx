@@ -629,6 +629,20 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   </div>
                 </div>
               )}
+              {card.taskDescription && (
+                <div>
+                  <div className={`text-sm ${
+                    darkMode ? 'text-neutral-300' : 'text-gray-600'
+                  }`}>
+                    Working on task:
+                  </div>
+                  <div className={`text-sm ${
+                    darkMode ? 'text-neutral-300' : 'text-gray-600'
+                  }`}>
+                    {card.taskDescription}
+                  </div>
+                </div>
+              )}
               {card.content && (
                 <div className={`text-sm ${
                   darkMode ? 'text-neutral-200' : 'text-gray-800'
