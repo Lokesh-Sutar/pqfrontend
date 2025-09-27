@@ -62,6 +62,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null);
   const [, forceUpdate] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 
   // Timer to update running tool times
@@ -106,7 +107,10 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     setInput("");
     setLoading(true);
 
-
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "56px";
+    }
 
     onMessageSent?.();
 
@@ -819,38 +823,43 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         </div>
       </div>
 
-      {/* Chat input area */}
-      <div className={`border-t p-4 ${
-        darkMode ? 'border-neutral-700 bg-neutral-800' : 'border-gray-200 bg-gray-50'
-      }`}>
+      <div className="px-3 pb-3 pt-1 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="flex gap-3">
-            <input
-              type="text"
+          <div className="relative">
+            <textarea
+              className={`w-full px-4 py-4 pr-14 rounded-2xl border focus:outline-none focus:ring-2 resize-none min-h-[56px] overflow-hidden ${
+                darkMode
+                  ? 'bg-neutral-800 border-neutral-600 text-white placeholder-neutral-400'
+                  : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+              }`}
+              style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value)
+                if (textareaRef.current) {
+                  textareaRef.current.style.height = 'auto'
+                  const newHeight = Math.min(textareaRef.current.scrollHeight, 284)
+                  textareaRef.current.style.height = `${newHeight}px`
+                  if (textareaRef.current.scrollHeight > 284) {
+                    textareaRef.current.scrollTop = textareaRef.current.scrollHeight
+                  }
+                }
+              }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !loading) {
+                if (e.key === 'Enter' && !e.shiftKey && !loading) {
                   e.preventDefault()
                   sendMessage()
                 }
               }}
-              placeholder="Type your message..."
-              className={`flex-1 px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                darkMode 
-                  ? 'bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              }`}
+              placeholder="Message..."
+              rows={1}
+              ref={textareaRef}
             />
             <button
+              className="absolute right-3 bottom-3 p-2 text-white rounded-lg disabled:opacity-50 transition-all duration-200 ease-out hover:opacity-90 hover:scale-110 active:scale-95"
+              style={{ backgroundColor: 'var(--primary)' }}
               onClick={sendMessage}
               disabled={loading || !input.trim()}
-              className={`px-4 py-3 rounded-lg transition-all duration-200 text-white hover:scale-105 active:scale-95 ${
-                loading || !input.trim()
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'hover:opacity-90'
-              }`}
-              style={!loading && input.trim() ? { backgroundColor: 'var(--primary)' } : {}}
             >
               <Send size={20} />
             </button>
