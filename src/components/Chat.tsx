@@ -584,6 +584,16 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   </div>
                   <div className="space-y-1">
                     {card.tools.map((tool, idx) => {
+                      const getSymbol = () => {
+                        if (tool.args?.time_horizon) return `(${tool.args.time_horizon})`
+                        if (tool.args?.period) return `(${tool.args.period})`
+                        if (tool.args?.risk_profile) return `(${tool.args.risk_profile})`
+                        if (tool.args?.ticker) return `(${tool.args.ticker})`
+                        if (tool.args?.symbol) return `(${tool.args.symbol})`
+                        if (tool.args?.query) return `(${tool.args.query})`
+                        return ''
+                      }
+
                       const getTime = () => {
                         if (tool.duration) {
                           return `${tool.duration.toFixed(1)}s`
@@ -609,7 +619,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             agent: card.title
                           })}
                         >
-                          <span>{tool.name}</span>
+                          <span>{tool.name} {getSymbol()}</span>
                           <span className={`text-xs ${darkMode ? 'text-neutral-400' : 'text-gray-500'}`}>
                             {getTime()}
                           </span>
