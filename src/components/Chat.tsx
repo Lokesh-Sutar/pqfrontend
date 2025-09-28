@@ -470,7 +470,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
       return (
         <div
           key={card.id}
-          className={`border rounded-lg ${
+          className={`border rounded-lg animate-fade-in ${
             darkMode
               ? 'border-neutral-600 bg-neutral-800'
               : 'border-gray-200 bg-white'
@@ -694,7 +694,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
 
               if (isProcessing && i === messages.length - 1) {
                 return (
-                  <div key={i} className="flex justify-start">
+                  <div key={i} className="flex justify-start animate-fade-in">
                     <div className="w-full max-w-[90%] space-y-3">
                       {renderCards(message.cards || [])}
                     </div>
@@ -704,13 +704,13 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
 
               if (isAiResponse) {
                 return (
-                  <div key={i} className="flex justify-start">
+                  <div key={i} className="flex justify-start animate-fade-in">
                     <div className="w-full max-w-[90%] space-y-3">
                       {renderCards(message.cards || [])}
 
                       {message.finalCard && (
                         <div
-                          className={`border rounded-lg ${
+                          className={`border rounded-lg animate-fade-in ${
                             darkMode
                               ? 'border-gray-600 bg-neutral-800'
                               : 'border-gray-200 bg-white'
@@ -763,34 +763,19 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               return (
                 <div
                   key={i}
-                  className={`flex animate-in slide-in-from-bottom-2 duration-300 ${
-                    isUser ? 'justify-end' : 'justify-start'
-                  }`}
+                  className={`flex animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
+                    className={`max-w-[70%] p-4 rounded-2xl break-words overflow-wrap-anywhere ${
                       isUser
                         ? 'text-white'
                         : darkMode
-                        ? 'bg-neutral-700 text-white'
-                        : 'bg-gray-200 text-gray-900'
+                        ? 'bg-neutral-800 text-white'
+                        : 'bg-gray-100 text-gray-900'
                     }`}
                     style={isUser ? { backgroundColor: 'var(--primary)' } : {}}
                   >
-                    {isUser ? (
-                      <p className="text-sm">{message.content}</p>
-                    ) : (
-                      <div className={`prose prose-sm max-w-none ${
-                        darkMode ? 'prose-invert' : ''
-                      }`}>
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkBreaks]}
-                          components={markdownComponents}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                    )}
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
                 </div>
               )
