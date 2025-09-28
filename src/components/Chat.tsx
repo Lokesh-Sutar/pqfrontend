@@ -823,6 +823,13 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         </div>
       </div>
 
+      {/* Gradient fade overlay above input area */}
+      <div className={`absolute bottom-0 left-0 right-0 mb-20 h-16 pointer-events-none bg-gradient-to-t ${
+        darkMode
+          ? 'from-neutral-900 via-neutral-900/80 to-transparent'
+          : 'from-white via-white/80 to-transparent'
+      }`}></div>
+
       <div className="px-3 pb-3 pt-1 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="relative">
@@ -864,6 +871,12 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               <Send size={20} />
             </button>
           </div>
+
+          <p className={`text-center text-xs mt-1 ${
+            darkMode ? 'text-neutral-400' : 'text-gray-500'
+          }`}>
+            AI agents can make mistakes. Consider checking important information.
+          </p>
         </div>
       </div>
 
