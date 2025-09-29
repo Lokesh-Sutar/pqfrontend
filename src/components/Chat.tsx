@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, ChevronDown, ChevronUp, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import remarkBreaks from 'remark-breaks'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faMoneyBillTrendUp,
@@ -11,6 +10,7 @@ import {
   faMagnifyingGlass,
   faClipboardList,
 } from '@fortawesome/free-solid-svg-icons'
+import { TradingViewWidget } from './TradingViewWidget'
 
 // Props interface for Chat component
 interface ChatProps {
@@ -64,6 +64,22 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Process ticker symbols for TradingView compatibility
+  const processTickers = (tickers: string[]): string[] => {
+    return tickers
+      .filter((ticker) => ticker !== "^VIX")
+      .map((ticker) => {
+        if (
+          ticker.endsWith(".BO") ||
+          ticker.endsWith(".NS") ||
+          ticker.endsWith(".NSE") ||
+          ticker.endsWith(".BSE")
+        ) {
+          return "BSE:" + ticker.split(".")[0];
+        }
+        return ticker;
+      });
+  };
 
   // Timer to update running tool times
   useEffect(() => {
@@ -86,14 +102,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     return () => document.removeEventListener('keydown', handleEsc)
   }, [selectedTool])
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, loading])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -120,7 +129,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         `http://localhost:8000/api/chat?prompt=${encodeURIComponent(userMessage)}`
       )
 
-      let responseContent = ''
       let currentCards: AgentCard[] = []
 
       // Handle team-level tool events (delegation)
@@ -306,7 +314,8 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         
         if (data.event === 'TeamRunCompleted') {
           setLoading(false)
-          responseContent = data.payload?.content || 'No response received'
+          const content = data.payload?.content || ''
+          const tickers = processTickers(data.tickers || [])
           
           // Close processing cards when completed
           setExpandedCards(prev => {
@@ -317,13 +326,21 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
             return newState
           })
           
-          const aiResponse: Message = {
-            type: 'ai-response',
-            content: '',
-            cards: currentCards,
-            finalCard: { title: 'Conductor', content: responseContent }
-          }
-          setMessages(prev => [...prev, aiResponse])
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg && lastMsg.type === "ai-processing") {
+              return [
+                ...prev.slice(0, -1),
+                {
+                  type: "ai-response" as const,
+                  content: "",
+                  cards: currentCards,
+                  finalCard: { title: "Conductor", content: content, tickers: tickers },
+                },
+              ];
+            }
+            return prev;
+          })
           onToolsCompleted?.()
           eventSource.close()
         }
@@ -454,19 +471,49 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         darkMode ? 'border-neutral-600' : 'border-gray-300'
       }`} />
     ),
+    br: () => <br />,
   }
 
-  const toggleCardExpansion = (cardId: string) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [cardId]: !prev[cardId]
-    }))
-  }
+  return (
+    <div
+      className={`flex-1 flex flex-col ${
+        darkMode ? "bg-neutral-900" : "bg-white"
+      }`}
+    >
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {messages.length === 0 ? (
+            /* Welcome message */
+            <div className="text-center py-8">
+              <h3
+                className={`text-xl font-semibold mb-2 ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Welcome to PersonaQuant
+              </h3>
+              <p
+                className={`${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Start a conversation with our AI agents for quantitative analysis
+              </p>
+            </div>
+          ) : (
+            /* Messages */
+            messages.map((message, i) => {
+              const isUser = message.type === "user";
+              const isAiResponse = message.type === "ai-response";
+              const isProcessing = message.type === "ai-processing";
 
-  // Render agent cards
-  const renderCards = (cards: AgentCard[]) =>
-    cards?.map((card) => {
-      const isExpanded = expandedCards[card.id]
+              // Render agent cards with expandable content
+              const renderCards = (cards: AgentCard[], keyPrefix: string = "") =>
+                cards?.map((card) => {
+                  const expandKey = keyPrefix
+                    ? `${keyPrefix}-${card.id}`
+                    : card.id;
+                  const isExpanded = expandedCards[expandKey]
       return (
         <div
           key={card.id}
@@ -497,7 +544,12 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 : darkMode
                 ? 'bg-neutral-700' : 'bg-gray-100'
             }`}
-            onClick={() => toggleCardExpansion(card.id)}
+            onClick={() =>
+              setExpandedCards((prev) => ({
+                ...prev,
+                [expandKey]: !prev[expandKey],
+              }))
+            }
           >
             <div className="flex items-center gap-2">
               {card.title === 'Finance Agent' && (
@@ -617,7 +669,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           onClick={() => setSelectedTool({
                             name: tool.name,
                             duration: tool.duration,
-                            startTime: tool.startTime,
                             args: tool.args,
                             result: tool.result,
                             agent: card.title
@@ -652,7 +703,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   darkMode ? 'text-neutral-200' : 'text-gray-800'
                 }`}>
                   <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    remarkPlugins={[remarkGfm]}
                     components={markdownComponents}
                   >
                     {card.content.replace(/\n/g, '  \n')}
@@ -662,35 +713,8 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
             </div>
           )}
         </div>
-      )
-    })
-
-  return (
-    <div className={`flex-1 flex flex-col ${
-      darkMode ? 'bg-neutral-900' : 'bg-white'
-    }`}>
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {messages.length === 0 ? (
-            /* Welcome message */
-            <div className="text-center py-8">
-              <h3 className={`text-xl font-semibold mb-2 ${
-                darkMode ? 'text-white' : 'text-gray-900'
-              }`}>
-                Welcome to PersonaQuant
-              </h3>
-              <p className={`${
-                darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                Start a conversation with our AI agents for quantitative analysis
-              </p>
-            </div>
-          ) : (
-            /* Messages */
-            messages.map((message, i) => {
-              const isUser = message.type === 'user'
-              const isAiResponse = message.type === 'ai-response'
-              const isProcessing = message.type === 'ai-processing'
+                  );
+                });
 
               if (isProcessing && i === messages.length - 1) {
                 return (
@@ -699,20 +723,20 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                       {renderCards(message.cards || [])}
                     </div>
                   </div>
-                )
+                );
               }
 
               if (isAiResponse) {
                 return (
                   <div key={i} className="flex justify-start animate-fade-in">
                     <div className="w-full max-w-[90%] space-y-3">
-                      {renderCards(message.cards || [])}
+                      {renderCards(message.cards || [], i.toString())}
 
                       {message.finalCard && (
                         <div
                           className={`border rounded-lg animate-fade-in ${
                             darkMode
-                              ? 'border-gray-600 bg-neutral-800'
+                              ? 'border-neutral-600 bg-neutral-800'
                               : 'border-gray-200 bg-white'
                           }`}
                         >
@@ -733,16 +757,26 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           </div>
                           <div
                             className={`px-3 py-3 border-t ${
-                              darkMode ? 'border-gray-600' : 'border-gray-200'
+                              darkMode ? 'border-neutral-600' : 'border-gray-200'
                             }`}
                           >
+                            {/* Display TradingView charts for detected stock tickers */}
+                            {message.finalCard.tickers &&
+                              message.finalCard.tickers.length > 0 && (
+                                <div className="mb-4">
+                                  <TradingViewWidget
+                                    symbols={message.finalCard.tickers}
+                                    darkMode={darkMode}
+                                  />
+                                </div>
+                              )}
                             <div
                               className={`text-sm ${
-                                darkMode ? 'text-gray-200' : 'text-gray-800'
+                                darkMode ? 'text-neutral-200' : 'text-gray-800'
                               }`}
                             >
                               <ReactMarkdown
-                                remarkPlugins={[remarkGfm, remarkBreaks]}
+                                remarkPlugins={[remarkGfm]}
                                 components={markdownComponents}
                               >
                                 {message.finalCard.content.replace(/\n/g, '  \n')}
