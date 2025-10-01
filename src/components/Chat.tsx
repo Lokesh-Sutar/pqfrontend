@@ -474,6 +474,112 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     br: () => <br />,
   }
 
+  // Recursively render nested data as bullet points
+  const renderBulletPoints = (data: any, depth: number = 0): JSX.Element[] => {
+    const items: JSX.Element[] = [];
+
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        if (typeof item === "object" && item !== null) {
+          items.push(
+            <li
+              key={index}
+              className={`mb-2 ${
+                darkMode ? "text-neutral-200" : "text-gray-800"
+              }`}
+            >
+              <span
+                className={`font-semibold ${
+                  darkMode ? "text-green-400" : "text-blue-700"
+                }`}
+              >
+                Item {index + 1}:
+              </span>
+              <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                {renderBulletPoints(item, depth + 1)}
+              </ul>
+            </li>
+          );
+        } else {
+          items.push(
+            <li
+              key={index}
+              className={`${darkMode ? "text-neutral-200" : "text-gray-800"}`}
+            >
+              {String(item)}
+            </li>
+          );
+        }
+      });
+    } else if (typeof data === "object" && data !== null) {
+      Object.entries(data).forEach(([key, value]) => {
+        if (
+          typeof value === "object" &&
+          value !== null &&
+          !Array.isArray(value)
+        ) {
+          items.push(
+            <li
+              key={key}
+              className={`mb-2 ${
+                darkMode ? "text-neutral-200" : "text-gray-800"
+              }`}
+            >
+              <span
+                className={`font-semibold ${
+                  darkMode ? "text-green-400" : "text-blue-700"
+                }`}
+              >
+                {key}:
+              </span>
+              <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                {renderBulletPoints(value, depth + 1)}
+              </ul>
+            </li>
+          );
+        } else if (Array.isArray(value)) {
+          items.push(
+            <li
+              key={key}
+              className={`mb-2 ${
+                darkMode ? "text-neutral-200" : "text-gray-800"
+              }`}
+            >
+              <span
+                className={`font-semibold ${
+                  darkMode ? "text-green-400" : "text-blue-700"
+                }`}
+              >
+                {key}:
+              </span>
+              <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                {renderBulletPoints(value, depth + 1)}
+              </ul>
+            </li>
+          );
+        } else {
+          items.push(
+            <li
+              key={key}
+              className={`${darkMode ? "text-neutral-200" : "text-gray-800"}`}
+            >
+              <span
+                className={`font-semibold ${
+                  darkMode ? "text-green-400" : "text-blue-700"
+                }`}
+              >
+                {key}:
+              </span>{" "}
+              {String(value)}
+            </li>
+          );
+        }
+      });
+    }
+
+    return items;
+  };
+
   return (
     <div
       className={`flex-1 flex flex-col ${
@@ -966,24 +1072,76 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                     <div className={`mt-2 p-3 rounded-lg text-sm ${
                       darkMode ? 'bg-neutral-700 text-neutral-200' : 'bg-gray-100 text-gray-800'
                     }`}>
-                      <pre className="whitespace-pre-wrap">
-                        {JSON.stringify(selectedTool.args, null, 2)}
-                      </pre>
+                      <ul className="list-none space-y-1">
+                        {renderBulletPoints(selectedTool.args)}
+                      </ul>
                     </div>
                   </div>
                 )}
               </div>
               {selectedTool.result && (
-                <div className="mt-6 flex flex-col gap-2 overflow-hidden">
+                <div className="mt-2 flex flex-col gap-2 overflow-hidden">
                   <label className={`text-sm font-medium ${darkMode ? 'text-neutral-300' : 'text-gray-700'}`}>
                     Result:
                   </label>
                   <div className={`p-4 rounded-lg overflow-y-auto ${
                     darkMode ? 'bg-neutral-700 text-neutral-200' : 'bg-gray-100 text-gray-800'
                   }`}>
-                    <pre className="text-sm whitespace-pre-wrap">
-                      {typeof selectedTool.result === 'string' ? selectedTool.result : JSON.stringify(selectedTool.result, null, 2)}
-                    </pre>
+                    {(() => {
+                      if (typeof selectedTool.result === 'string' && selectedTool.result.match(/^["']?[0-9.]+["']?$/)) {
+                        return (
+                          <div className={`text-lg font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                            {selectedTool.result.replace(/["']/g, '')}
+                          </div>
+                        );
+                      }
+
+                      let parsed = null;
+                      try {
+                        let cleanResult = selectedTool.result;
+                        if (typeof cleanResult === 'string') {
+                          cleanResult = cleanResult.replace(/np\.float64\(([^)]+)\)/g, '$1');
+                          if (cleanResult.includes("'") && cleanResult.startsWith('{')) {
+                            let jsonString = cleanResult.replace(/'/g, '"').replace(/True/g, 'true').replace(/False/g, 'false').replace(/None/g, 'null');
+                            try {
+                              parsed = JSON.parse(jsonString);
+                            } catch {
+                              parsed = eval('(' + cleanResult + ')');
+                            }
+                          } else {
+                            try {
+                              parsed = JSON.parse(cleanResult);
+                            } catch {
+                              parsed = eval('(' + cleanResult + ')');
+                            }
+                          }
+                        } else {
+                          parsed = cleanResult;
+                        }
+
+                        if (Array.isArray(parsed) && (selectedTool.name.includes('search') || selectedTool.name.includes('news'))) {
+                          return (
+                            <div className="grid grid-cols-3 gap-4">
+                              {parsed.map((item, index) => (
+                                <div key={index} className={`p-4 rounded-lg border ${darkMode ? 'bg-neutral-800 border-neutral-600' : 'bg-gray-100 border-gray-200'}`}>
+                                  {item.title && <h4 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>{item.title}</h4>}
+                                  {item.body && <p className={`text-sm mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.body}</p>}
+                                  {item.image && <img src={item.image} alt="News thumbnail" className="w-full h-32 object-cover rounded mt-2" />}
+                                  {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className={`text-sm underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>View Source</a>}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }
+
+                        return <ul className="list-none space-y-1 text-sm">{renderBulletPoints(parsed)}</ul>;
+                      } catch {
+                        if (typeof selectedTool.result === 'string') {
+                          return <div className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{selectedTool.result}</div>;
+                        }
+                        return <pre className={`text-xs font-mono whitespace-pre-wrap ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{JSON.stringify(selectedTool.result, null, 2)}</pre>;
+                      }
+                    })()}
                   </div>
                 </div>
               )}
