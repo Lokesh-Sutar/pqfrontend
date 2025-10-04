@@ -61,7 +61,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   }>({});
   const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null);
   const [, forceUpdate] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Process ticker symbols for TradingView compatibility
@@ -79,304 +78,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         }
         return ticker;
       });
-  };
-
-  // Timer to update running tool times
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (loading) {
-        forceUpdate((prev) => prev + 1);
-      }
-    }, 100); // Update every 100ms
-    return () => clearInterval(interval);
-  }, [loading]);
-
-  // ESC key to close popup
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedTool) {
-        setSelectedTool(null);
-      }
-    };
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [selectedTool]);
-
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    const userMessage = input;
-    setMessages((prev) => [
-      ...prev,
-      { type: "user", content: userMessage },
-      { type: "ai-processing", content: "", cards: [] },
-    ]);
-    setInput("");
-    setLoading(true);
-
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "56px";
-    }
-
-    onMessageSent?.();
-
-    // Send message to backend API
-    try {
-      const eventSource = new EventSource(
-        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(
-          userMessage
-        )}`
-      );
-
-      let currentCards: AgentCard[] = [];
-
-      // Handle team-level tool events (delegation)
-      eventSource.addEventListener("tool", (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.event === "TeamToolCallStarted") {
-          const toolName = data.payload?.tool?.tool_name;
-          const memberId = data.payload?.tool?.tool_args?.member_id;
-          const taskDescription =
-            data.payload?.tool?.tool_args?.task_description;
-
-          if (toolName === "delegate_task_to_member" && memberId) {
-            let title = "";
-            if (memberId === "agent-1") title = "Finance Agent";
-            else if (memberId === "agent-2") title = "Sentiment Agent";
-            else if (memberId === "agent-3") title = "Advisory Agent";
-            else if (memberId === "agent-4") title = "Search Agent";
-
-            if (title) {
-              const newCard: AgentCard = {
-                id: `card-${memberId}-${Date.now()}`,
-                runId: `run-${Date.now()}`,
-                title: title,
-                content: "",
-                tools: [],
-                taskDescription: taskDescription || "",
-                startTime: Date.now(),
-              };
-              currentCards = [...currentCards, newCard];
-
-              // Auto-expand processing cards
-              setExpandedCards((prev) => ({ ...prev, [newCard.id]: true }));
-
-              // Update messages immediately to show live processing
-              setMessages((prev) => {
-                const lastMsg = prev[prev.length - 1];
-                if (lastMsg && lastMsg.type === "ai-processing") {
-                  return [
-                    ...prev.slice(0, -1),
-                    { ...lastMsg, cards: currentCards },
-                  ];
-                } else {
-                  return [
-                    ...prev,
-                    {
-                      id: (Date.now() + 2).toString(),
-                      content: "",
-                      sender: "assistant" as const,
-                      timestamp: new Date(),
-                      type: "ai-processing" as const,
-                      cards: currentCards,
-                    },
-                  ];
-                }
-              });
-            }
-          }
-        }
-
-        if (data.event === "TeamToolCallCompleted") {
-          const toolName = data.payload?.tool?.tool_name;
-          const result = data.payload?.tool?.result;
-          const memberId = data.payload?.tool?.tool_args?.member_id;
-
-          if (toolName === "delegate_task_to_member" && result && memberId) {
-            const memberCards = currentCards.filter((card) =>
-              card.id.includes(memberId)
-            );
-            const latestMemberCard = memberCards[memberCards.length - 1];
-
-            currentCards = currentCards.map((card) => {
-              if (card.id === latestMemberCard?.id) {
-                const totalDuration = card.startTime
-                  ? (Date.now() - card.startTime) / 1000
-                  : undefined;
-                return {
-                  ...card,
-                  content: result,
-                  taskDescription: undefined,
-                  totalDuration,
-                };
-              }
-              return card;
-            });
-
-            // Update messages immediately to show live updates
-            setMessages((prev) => {
-              const lastMsg = prev[prev.length - 1];
-              if (lastMsg && lastMsg.type === "ai-processing") {
-                return [
-                  ...prev.slice(0, -1),
-                  { ...lastMsg, cards: currentCards },
-                ];
-              }
-              return prev;
-            });
-          }
-        }
-      });
-
-      // Handle individual agent tool events
-      const handleAgentTool = (event: MessageEvent, agentTitle: string) => {
-        const data = JSON.parse(event.data);
-        const toolName = data.payload?.tool?.tool_name;
-        const agentName = data.payload?.agent_name;
-
-        if (data.event === "ToolCallStarted" && toolName && agentName) {
-          const agentCards = currentCards.filter(
-            (card) => card.title === agentTitle
-          );
-          const latestCard = agentCards[agentCards.length - 1];
-          const toolArgs = data.payload?.tool?.tool_args;
-
-          if (latestCard) {
-            currentCards = currentCards.map((card) =>
-              card.id === latestCard.id
-                ? {
-                    ...card,
-                    tools: [
-                      ...(card.tools || []),
-                      { name: toolName, startTime: Date.now(), args: toolArgs },
-                    ],
-                  }
-                : card
-            );
-
-            // Update messages immediately to show live tool execution
-            setMessages((prev) => {
-              const lastMsg = prev[prev.length - 1];
-              if (lastMsg && lastMsg.type === "ai-processing") {
-                return [
-                  ...prev.slice(0, -1),
-                  { ...lastMsg, cards: currentCards },
-                ];
-              }
-              return prev;
-            });
-          }
-        }
-
-        if (data.event === "ToolCallCompleted" && toolName && agentName) {
-          const agentCards = currentCards.filter(
-            (card) => card.title === agentTitle
-          );
-          const latestCard = agentCards[agentCards.length - 1];
-          const duration = data.payload?.tool?.metrics?.duration;
-          const result = data.payload?.tool?.result;
-
-          if (latestCard) {
-            currentCards = currentCards.map((card) => {
-              if (card.id === latestCard.id) {
-                const updatedTools =
-                  card.tools?.map((tool) =>
-                    tool.name === toolName && !tool.duration
-                      ? { ...tool, duration, result }
-                      : tool
-                  ) || [];
-                return { ...card, tools: updatedTools };
-              }
-              return card;
-            });
-
-            // Update messages immediately to show live tool completion
-            setMessages((prev) => {
-              const lastMsg = prev[prev.length - 1];
-              if (lastMsg && lastMsg.type === "ai-processing") {
-                return [
-                  ...prev.slice(0, -1),
-                  { ...lastMsg, cards: currentCards },
-                ];
-              }
-              return prev;
-            });
-          }
-        }
-      };
-
-      eventSource.addEventListener("tool-finance", (event) => {
-        handleAgentTool(event, "Finance Agent");
-      });
-
-      eventSource.addEventListener("tool-sentiment", (event) => {
-        handleAgentTool(event, "Sentiment Agent");
-      });
-
-      eventSource.addEventListener("tool-advisory", (event) => {
-        handleAgentTool(event, "Advisory Agent");
-      });
-
-      eventSource.addEventListener("tool-search", (event) => {
-        handleAgentTool(event, "Search Agent");
-      });
-
-      eventSource.addEventListener("run", (event) => {
-        const data = JSON.parse(event.data);
-
-        if (data.event === "TeamRunCompleted") {
-          setLoading(false);
-          const content = data.payload?.content || "";
-          const tickers = processTickers(data.tickers || []);
-
-          // Close processing cards when completed
-          setExpandedCards((prev) => {
-            const newState = { ...prev };
-            currentCards.forEach((card) => {
-              delete newState[card.id];
-            });
-            return newState;
-          });
-
-          setMessages((prev) => {
-            const lastMsg = prev[prev.length - 1];
-            if (lastMsg && lastMsg.type === "ai-processing") {
-              return [
-                ...prev.slice(0, -1),
-                {
-                  type: "ai-response" as const,
-                  content: "",
-                  cards: currentCards,
-                  finalCard: {
-                    title: "Conductor",
-                    content: content,
-                    tickers: tickers,
-                  },
-                },
-              ];
-            }
-            return prev;
-          });
-          onToolsCompleted?.();
-          eventSource.close();
-        }
-      });
-
-      eventSource.addEventListener("error", () => {
-        setLoading(false);
-        eventSource.close();
-      });
-
-      eventSource.addEventListener("end", () => {
-        setLoading(false);
-        eventSource.close();
-      });
-    } catch (error) {
-      console.error("Failed to create EventSource:", error);
-      setLoading(false);
-    }
   };
 
   // Custom markdown components for consistent styling
@@ -544,6 +245,354 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     br: () => <br />,
   };
 
+  // Timer to update running tool times
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (loading) {
+        forceUpdate((prev) => prev + 1);
+      }
+    }, 100); // Update every 100ms
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  // ESC key to close popup
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedTool) {
+        setSelectedTool(null);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [selectedTool]);
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input;
+    setMessages((prev) => [
+      ...prev,
+      { type: "user", content: userMessage },
+      { type: "ai-processing", content: "", cards: [] },
+    ]);
+    setInput("");
+    setLoading(true);
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "56px";
+    }
+
+    onMessageSent?.();
+
+    // Send message to backend API
+    try {
+      const eventSource = new EventSource(
+        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(
+          userMessage
+        )}`
+      );
+
+      let currentCards: AgentCard[] = [];
+
+      // Handle individual agent tool events (start/complete)
+      const handleAgentTool = (data: any, agentTitle: string) => {
+        const toolName = data.payload?.tool?.tool_name;
+        const agentName = data.payload?.agent_name;
+
+        if (
+          data.event === "ToolCallStarted" &&
+          toolName &&
+          toolName !== "delegate_task_to_member" &&
+          toolName !== "update_user_memory" &&
+          agentName
+        ) {
+          const toolArgs = data.payload?.tool?.tool_args;
+          const agentCards = currentCards.filter(
+            (card) => card.title === agentTitle
+          );
+          const latestCard = agentCards[agentCards.length - 1];
+
+          currentCards = currentCards.map((card) =>
+            card.id === latestCard?.id
+              ? {
+                  ...card,
+                  tools: [
+                    ...card.tools,
+                    { name: toolName, startTime: Date.now(), args: toolArgs },
+                  ],
+                }
+              : card
+          );
+
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg && lastMsg.type === "ai-processing") {
+              return [
+                ...prev.slice(0, -1),
+                { ...lastMsg, cards: currentCards },
+              ];
+            }
+            return prev;
+          });
+        }
+
+        if (
+          data.event === "ToolCallCompleted" &&
+          toolName &&
+          toolName !== "delegate_task_to_member" &&
+          toolName !== "update_user_memory" &&
+          agentName
+        ) {
+          const duration = data.payload?.tool?.metrics?.duration;
+          const result = data.payload?.tool?.result;
+          const agentCards = currentCards.filter(
+            (card) => card.title === agentTitle
+          );
+          const latestCard = agentCards[agentCards.length - 1];
+
+          // console.log(`🔧 ToolCallCompleted (${agentName}) EVENT:`, data.payload?.tool)
+          console.log(`🔧 ToolCallCompleted (${agentName}) EVENT:`, data);
+          currentCards = currentCards.map((card) => {
+            if (card.id === latestCard?.id) {
+              const updatedTools = card.tools.map((tool) =>
+                tool.name === toolName && !tool.duration
+                  ? { ...tool, duration, result }
+                  : tool
+              );
+              return { ...card, tools: updatedTools };
+            }
+            return card;
+          });
+
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg && lastMsg.type === "ai-processing") {
+              return [
+                ...prev.slice(0, -1),
+                { ...lastMsg, cards: currentCards },
+              ];
+            }
+            return prev;
+          });
+        }
+      };
+
+      // Handle team-level tool events (delegation)
+      eventSource.addEventListener("tool", (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.event === "TeamToolCallStarted") {
+          console.log(
+            `🔧 TeamToolCallStarted (${data.payload?.tool?.tool_args?.member_id}) EVENT:`,
+            JSON.stringify(
+              data.payload?.tool?.tool_args?.task_description,
+              null,
+              2
+            )
+          );
+          const toolName = data.payload?.tool?.tool_name;
+          const memberId = data.payload?.tool?.tool_args?.member_id;
+          const taskDescription =
+            data.payload?.tool?.tool_args?.task_description;
+          const runId = data.meta?.runId;
+
+          if (toolName === "delegate_task_to_member" && memberId && runId) {
+            let title = "";
+            if (memberId === "agent-1") title = "Finance Agent";
+            else if (memberId === "agent-2") title = "Sentiment Agent";
+            else if (memberId === "agent-3") title = "Advisory Agent";
+            else if (memberId === "agent-4") title = "Search Agent";
+
+            if (title) {
+              const newCard: AgentCard = {
+                id: `card-${memberId}-${Date.now()}`,
+                runId: runId,
+                title: title,
+                tools: [],
+                content: "",
+                taskDescription: taskDescription || "",
+                startTime: Date.now(),
+              };
+              currentCards = [...currentCards, newCard];
+
+              // Auto-expand processing cards
+              setExpandedCards((prev) => ({ ...prev, [newCard.id]: true }));
+
+              setMessages((prev) => {
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg && lastMsg.type === "ai-processing") {
+                  return [
+                    ...prev.slice(0, -1),
+                    { ...lastMsg, cards: currentCards },
+                  ];
+                }
+                return prev;
+              });
+            }
+          }
+        }
+
+        if (data.event === "TeamToolCallCompleted") {
+          console.log(
+            `🔧 TeamToolCallCompleted (${data.payload?.tool?.tool_args?.member_id}) EVENT:`,
+            JSON.stringify(data.payload?.tool?.result, null, 2)
+          );
+          const toolName = data.payload?.tool?.tool_name;
+          const result = data.payload?.tool?.result;
+          const runId = data.meta?.runId;
+
+          if (toolName === "delegate_task_to_member" && result && runId) {
+            const memberId = data.payload?.tool?.tool_args?.member_id;
+            // Find the most recent card for this member since runIds might be different
+            const memberCards = currentCards.filter((card) =>
+              card.id.includes(memberId)
+            );
+            const latestMemberCard = memberCards[memberCards.length - 1];
+
+            currentCards = currentCards.map((card) => {
+              if (card.id === latestMemberCard?.id) {
+                const totalDuration = card.startTime
+                  ? (Date.now() - card.startTime) / 1000
+                  : undefined;
+                return {
+                  ...card,
+                  content: result,
+                  taskDescription: undefined,
+                  totalDuration,
+                };
+              }
+              return card;
+            });
+
+            // Update messages immediately to show live updates
+            setMessages((prev) => {
+              const lastMsg = prev[prev.length - 1];
+              if (lastMsg && lastMsg.type === "ai-processing") {
+                return [
+                  ...prev.slice(0, -1),
+                  { ...lastMsg, cards: currentCards },
+                ];
+              }
+              return prev;
+            });
+          }
+        }
+      });
+
+      eventSource.addEventListener("tool-finance", (event) => {
+        handleAgentTool(JSON.parse(event.data), "Finance Agent");
+      });
+
+      eventSource.addEventListener("tool-sentiment", (event) => {
+        handleAgentTool(JSON.parse(event.data), "Sentiment Agent");
+      });
+
+      eventSource.addEventListener("tool-advisory", (event) => {
+        handleAgentTool(JSON.parse(event.data), "Advisory Agent");
+      });
+
+      eventSource.addEventListener("tool-search", (event) => {
+        handleAgentTool(JSON.parse(event.data), "Search Agent");
+      });
+
+      eventSource.addEventListener("run", (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.event === "TeamRunCompleted") {
+          // console.log('🏁 TeamRunCompleted EVENT:', data.payload)
+          console.log("🏁 TeamRunCompleted EVENT:", data);
+          setLoading(false);
+
+          const content = data.payload?.content || "";
+          const tickers = processTickers(data.tickers || []);
+          console.log("TeamRunCompleted TICKERS:", tickers);
+
+          const finalCard = {
+            title: "Conductor",
+            content: content,
+            tickers: tickers,
+          };
+
+          // Close processing cards when completed
+          setExpandedCards((prev) => {
+            const newState = { ...prev };
+            currentCards.forEach((card) => {
+              delete newState[card.id];
+            });
+            return newState;
+          });
+
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg && lastMsg.type === "ai-processing") {
+              return [
+                ...prev.slice(0, -1),
+                {
+                  type: "ai-response" as const,
+                  content: "",
+                  cards: currentCards,
+                  finalCard: finalCard,
+                },
+              ];
+            }
+            return prev;
+          });
+
+          onToolsCompleted?.();
+        }
+      });
+
+      // Handle error events
+      eventSource.addEventListener("error", (event) => {
+        setLoading(false);
+
+        let errorMessage = "An error occurred while processing your request.";
+        if (event.data) {
+          try {
+            const errorData = JSON.parse(event.data);
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch {}
+        }
+
+        const errorCard: AgentCard = {
+          id: `error-${Date.now()}`,
+          runId: `error-${Date.now()}`,
+          title: "Error",
+          tools: [],
+          content: errorMessage,
+        };
+
+        setMessages((prev) => {
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg && lastMsg.type === "ai-processing") {
+            return [
+              ...prev.slice(0, -1),
+              {
+                type: "ai-response" as const,
+                content: "",
+                cards: [...currentCards, errorCard],
+              },
+            ];
+          }
+          return prev;
+        });
+
+        eventSource.close();
+      });
+
+      eventSource.addEventListener("end", () => {
+        setLoading(false);
+        eventSource.close();
+      });
+    } catch (error) {
+      console.error("Failed to create EventSource:", error);
+      setLoading(false);
+    }
+  };
+
   // Recursively render nested data as bullet points
   const renderBulletPoints = (data: any, depth: number = 0): JSX.Element[] => {
     const items: JSX.Element[] = [];
@@ -674,11 +723,10 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               </p>
             </div>
           ) : (
-            /* Messages */
-            messages.map((message, i) => {
-              const isUser = message.type === "user";
-              const isAiResponse = message.type === "ai-response";
-              const isProcessing = message.type === "ai-processing";
+            messages.map((msg, i) => {
+              const isUser = msg.type === "user";
+              const isProcessing = msg.type === "ai-processing";
+              const isAiResponse = msg.type === "ai-response";
 
               // Render agent cards with expandable content
               const renderCards = (
@@ -689,7 +737,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   const expandKey = keyPrefix
                     ? `${keyPrefix}-${card.id}`
                     : card.id;
-                  const isExpanded = expandedCards[expandKey];
                   return (
                     <div
                       key={card.id}
@@ -717,9 +764,13 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             ? darkMode
                               ? "bg-neutral-700/30 hover:bg-neutral-600/40"
                               : "bg-gray-200/50 hover:bg-gray-300/60"
+                            : card.title === "Error"
+                            ? darkMode
+                              ? "bg-red-900/30 hover:bg-red-800/40"
+                              : "bg-red-100/50 hover:bg-red-200/60"
                             : darkMode
-                            ? "bg-neutral-700"
-                            : "bg-gray-100"
+                            ? "bg-neutral-600/30 hover:bg-neutral-500/40"
+                            : "bg-gray-100/50 hover:bg-gray-200/60"
                         }`}
                         onClick={() =>
                           setExpandedCards((prev) => ({
@@ -802,14 +853,14 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                 ).toFixed(1)}s`
                               : "0.0s"}
                           </span>
-                          {isExpanded ? (
+                          {expandedCards[expandKey] ? (
                             <ChevronUp size={16} />
                           ) : (
                             <ChevronDown size={16} />
                           )}
                         </div>
                       </div>
-                      {isExpanded && (
+                      {expandedCards[expandKey] && (
                         <div
                           className={`p-3 border-t ${
                             darkMode ? "border-neutral-600" : "border-gray-200"
@@ -834,6 +885,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                               </div>
                               <div className="space-y-1">
                                 {card.tools.map((tool, idx) => {
+                                  // Extract relevant parameter for display
                                   const getSymbol = () => {
                                     if (tool.args?.time_horizon)
                                       return `(${tool.args.time_horizon})`;
@@ -850,6 +902,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                     return "";
                                   };
 
+                                  // Calculate tool execution time
                                   const getTime = () => {
                                     if (tool.duration) {
                                       return `${tool.duration.toFixed(1)}s`;
@@ -920,30 +973,64 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             </div>
                           )}
                           {card.content && (
+                            <div>
+                            {card.title !== "Error" && (
+                              <div
+                                className={`text-sm font-medium mb-2 ${
+                                  darkMode
+                                    ? "text-neutral-300"
+                                    : "text-gray-700"
+                                }`}
+                              ></div>
+                            )}{" "}
+                            {/*Content:*/}
                             <div
                               className={`text-sm ${
                                 darkMode ? "text-neutral-200" : "text-gray-800"
                               }`}
                             >
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={markdownComponents}
-                              >
-                                {card.content.replace(/\n/g, "  \n")}
-                              </ReactMarkdown>
+                              {(() => {
+                                try {
+                                  return (
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      components={markdownComponents}
+                                    >
+                                      {card.content.replace(/\n/g, "  \n")}
+                                    </ReactMarkdown>
+                                  );
+                                } catch (error) {
+                                  console.error(
+                                    "Agent card markdown render error:",
+                                    error
+                                  );
+                                  return (
+                                    <pre
+                                      className={`whitespace-pre-wrap ${
+                                        darkMode
+                                          ? "text-neutral-200"
+                                          : "text-gray-800"
+                                      }`}
+                                    >
+                                      {card.content}
+                                    </pre>
+                                  );
+                                }
+                              })()}
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                });
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
 
               if (isProcessing && i === messages.length - 1) {
                 return (
                   <div key={i} className="flex justify-start animate-fade-in">
                     <div className="w-full max-w-[90%] space-y-3">
-                      {renderCards(message.cards || [])}
+                      {renderCards(msg.cards || [])}
                     </div>
                   </div>
                 );
@@ -953,9 +1040,9 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 return (
                   <div key={i} className="flex justify-start animate-fade-in">
                     <div className="w-full max-w-[90%] space-y-3">
-                      {renderCards(message.cards || [], i.toString())}
+                      {renderCards(msg.cards || [], i.toString())}
 
-                      {message.finalCard && (
+                      {msg.finalCard && (
                         <div
                           className={`border rounded-lg animate-fade-in ${
                             darkMode
@@ -976,7 +1063,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                 darkMode ? "text-yellow-400" : "text-yellow-600"
                               }`}
                             />
-                            {message.finalCard.title}
+                            {msg.finalCard.title}
                           </div>
                           <div
                             className={`px-3 py-3 border-t ${
@@ -986,11 +1073,11 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             }`}
                           >
                             {/* Display TradingView charts for detected stock tickers */}
-                            {message.finalCard.tickers &&
-                              message.finalCard.tickers.length > 0 && (
+                            {msg.finalCard.tickers &&
+                              msg.finalCard.tickers.length > 0 && (
                                 <div className="mb-4">
                                   <TradingViewWidget
-                                    symbols={message.finalCard.tickers}
+                                    symbols={msg.finalCard.tickers}
                                     darkMode={darkMode}
                                   />
                                 </div>
@@ -1000,50 +1087,65 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                 darkMode ? "text-neutral-200" : "text-gray-800"
                               }`}
                             >
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={markdownComponents}
-                              >
-                                {message.finalCard.content.replace(
-                                  /\n/g,
-                                  "  \n"
-                                )}
-                              </ReactMarkdown>
-                            </div>
+                              {(() => {
+                              try {
+                                return (
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={markdownComponents}
+                                  >
+                                    {msg.finalCard.content.replace(
+                                      /\n/g,
+                                      "  \n"
+                                    )}
+                                  </ReactMarkdown>
+                                );
+                              } catch (error) {
+                                console.error("Markdown render error:", error);
+                                return (
+                                  <pre
+                                    className={`whitespace-pre-wrap ${
+                                      darkMode
+                                        ? "text-gray-200"
+                                        : "text-gray-800"
+                                    }`}
+                                  >
+                                    {msg.finalCard.content}
+                                  </pre>
+                                );
+                              }
+                            })()}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (isProcessing || !message.content.trim()) {
-                return null;
-              }
-
-              return (
-                <div
-                  key={i}
-                  className={`flex animate-fade-in ${
-                    isUser ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[70%] p-4 rounded-2xl break-words overflow-wrap-anywhere ${
-                      isUser
-                        ? "text-white"
-                        : darkMode
-                        ? "bg-neutral-800 text-white"
-                        : "bg-gray-100 text-gray-900"
-                    }`}
-                    style={isUser ? { backgroundColor: "var(--primary)" } : {}}
-                  >
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
-            })
+            }
+
+            return (
+              <div
+                key={i}
+                className={`flex animate-fade-in ${
+                  isUser ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-[70%] p-4 rounded-2xl break-words overflow-wrap-anywhere ${
+                    isUser
+                      ? "text-white"
+                      : darkMode
+                      ? "bg-neutral-800 text-white"
+                      : "bg-gray-100 text-gray-900"
+                  }`}
+                  style={isUser ? { backgroundColor: "var(--primary)" } : {}}
+                >
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              </div>
+            );
+          })
           )}
 
           {/* Loading indicator */}
@@ -1072,9 +1174,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 </div>
               </div>
             )}
-
-          {/* Invisible div for auto-scroll */}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -1189,7 +1288,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 <div className="col-span-2">
                   <label
                     className={`text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
+                      darkMode ? "text-neutral-300" : "text-gray-700"
                     }`}
                   >
                     Name:
@@ -1205,7 +1304,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 <div className="col-span-1">
                   <label
                     className={`text-sm font-medium ${
-                      darkMode ? "text-gray-300" : "text-gray-700"
+                      darkMode ? "text-neutral-300" : "text-gray-700"
                     }`}
                   >
                     Status:
@@ -1228,7 +1327,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   <div className="col-span-1">
                     <label
                       className={`text-sm font-medium ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
+                        darkMode ? "text-neutral-300" : "text-gray-700"
                       }`}
                     >
                       Duration:
@@ -1282,6 +1381,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                     }`}
                   >
                     {(() => {
+                      // Special handling for simple string results (like stock prices)
                       if (
                         typeof selectedTool.result === "string" &&
                         selectedTool.result.match(/^["']?[0-9.]+["']?$/)
@@ -1301,14 +1401,17 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                       try {
                         let cleanResult = selectedTool.result;
                         if (typeof cleanResult === "string") {
+                          // Clean numpy references
                           cleanResult = cleanResult.replace(
                             /np\.float64\(([^)]+)\)/g,
                             "$1"
                           );
+                          // Handle Python dict format
                           if (
                             cleanResult.includes("'") &&
                             cleanResult.startsWith("{")
                           ) {
+                            // Replace Python single quotes with double quotes for JSON parsing
                             let jsonString = cleanResult
                               .replace(/'/g, '"')
                               .replace(/True/g, "true")
@@ -1317,12 +1420,15 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             try {
                               parsed = JSON.parse(jsonString);
                             } catch {
+                              // Fallback to eval if JSON parsing fails
                               parsed = eval("(" + cleanResult + ")");
                             }
                           } else {
+                            // Try JSON first for regular JSON strings
                             try {
                               parsed = JSON.parse(cleanResult);
                             } catch {
+                              // Try eval for Python dict
                               parsed = eval("(" + cleanResult + ")");
                             }
                           }
@@ -1330,6 +1436,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           parsed = cleanResult;
                         }
 
+                        // Special handling for search/news results
                         if (
                           Array.isArray(parsed) &&
                           (selectedTool.name.includes("search") ||
@@ -1401,6 +1508,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           </ul>
                         );
                       } catch {
+                        // Handle simple string results
                         if (typeof selectedTool.result === "string") {
                           return (
                             <div
