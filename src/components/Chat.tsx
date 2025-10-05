@@ -705,21 +705,34 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         darkMode ? "bg-neutral-900" : "bg-white"
       }`}
     >
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-4">
+      <div className={`flex-1 overflow-y-auto p-8 transition-all duration-500 ease-in-out ${
+        messages.length === 0 ? "flex flex-col justify-end" : ""
+      }`}>
+        <div className={`max-w-4xl mx-auto space-y-4 transition-all duration-500 ease-in-out`}>
           {messages.length === 0 ? (
-            /* Welcome message */
-            <div className="text-center py-8">
-              <h3
-                className={`text-xl font-semibold mb-2 ${
+            // Welcome message 
+            <div className="text-center">
+              <h1
+                className={`text-4xl font-bold mb-4 ${
                   darkMode ? "text-white" : "text-gray-900"
                 }`}
               >
                 Welcome to PersonaQuant
-              </h3>
-              <p className={`${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                Start a conversation with our AI agents for quantitative
-                analysis
+              </h1>
+              <p
+                className={`text-lg mb-2 ${
+                  darkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
+                Your AI-Powered Quantitative Analysis Platform
+              </p>
+              <p
+                className={`text-sm ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Get insights from our specialized AI agents for finance, sentiment,
+                and market analysis
               </p>
             </div>
           ) : (
@@ -1178,15 +1191,20 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
       </div>
 
       {/* Gradient fade overlay above input area */}
-      <div
-        className={`absolute bottom-0 left-0 right-0 mb-20 h-16 pointer-events-none bg-gradient-to-t ${
-          darkMode
-            ? "from-neutral-900 via-neutral-900/80 to-transparent"
-            : "from-white via-white/80 to-transparent"
-        }`}
-      ></div>
+      {messages.length > 0 && (
+        <div
+          className={`absolute bottom-0 left-0 right-0 mb-20 h-16 pointer-events-none bg-gradient-to-t ${
+            darkMode
+              ? "from-neutral-900 via-neutral-900/80 to-transparent"
+              : "from-white via-white/80 to-transparent"
+          }`}
+        ></div>
+      )}
 
-      <div className="px-3 pb-3 pt-1 relative z-10">
+      <div className={`px-3 pb-3 pt-1 relative z-10 transition-all duration-500 ease-in-out ${
+          messages.length === 0 ? "mb-[18%]" : ""
+        }`}
+        >
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <textarea
