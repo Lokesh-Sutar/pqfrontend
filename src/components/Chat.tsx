@@ -1266,11 +1266,11 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
       {/* Tool details popup */}
       {selectedTool && (
         <div
-          className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 animate-fade-in"
           onClick={() => setSelectedTool(null)}
         >
           <div
-            className={`w-[80%] h-[80%] rounded-xl shadow-2xl ${
+            className={`w-[80%] h-[80%] rounded-xl shadow-2xl animate-scale-in ${
               darkMode
                 ? "bg-neutral-800 border-neutral-600"
                 : "bg-white border-gray-200"

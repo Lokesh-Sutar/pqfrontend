@@ -55,7 +55,7 @@ export function ColorPicker({
       {/* Color picker popover */}
       {isOpen && (
         <div
-          className={`absolute top-12 right-0 p-3 rounded-lg shadow-lg border z-50 ${
+          className={`absolute top-12 right-0 p-3 rounded-lg shadow-lg border z-50 animate-scale-in ${
             darkMode
               ? "bg-neutral-800 border-gray-600"
               : "bg-white border-gray-200"
