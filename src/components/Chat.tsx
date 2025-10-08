@@ -1201,10 +1201,11 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         ></div>
       )}
 
-      <div className={`px-3 pb-3 pt-1 relative z-10 transition-all duration-500 ease-in-out ${
+      <div className={`px-3 pb-3 pt-1 relative z-10 ${
           messages.length === 0 ? "mb-[18%]" : ""
         }`}
-        >
+        style={{ transition: 'margin-bottom 0.3s ease-in-out' }}
+      >
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <textarea
