@@ -720,13 +720,6 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 Welcome to PersonaQuant
               </h1>
               <p
-                className={`text-lg mb-2 ${
-                  darkMode ? "text-gray-300" : "text-gray-600"
-                }`}
-              >
-                Your AI-Powered Quantitative Analysis Platform
-              </p>
-              <p
                 className={`text-sm ${
                   darkMode ? "text-gray-400" : "text-gray-500"
                 }`}
@@ -930,10 +923,10 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                   return (
                                     <div
                                       key={idx}
-                                      className={`text-sm px-2 py-1 rounded flex justify-between items-center cursor-pointer hover:opacity-80 hover:scale-102 transition-transform duration-200 ${
+                                      className={`text-sm px-2 py-1 rounded flex justify-between items-center cursor-pointer transition-all duration-200 ease-in-out hover:scale-102 hover:shadow-sm ${
                                         darkMode
-                                          ? "bg-neutral-700 text-neutral-200"
-                                          : "bg-gray-100 text-gray-700"
+                                          ? "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
+                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                       }`}
                                       onClick={() =>
                                         setSelectedTool({
