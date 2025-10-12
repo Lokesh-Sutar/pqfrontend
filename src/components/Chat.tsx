@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { Send, ChevronDown, ChevronUp, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -61,7 +62,115 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   }>({});
   const [selectedTool, setSelectedTool] = useState<ToolDetails | null>(null);
   const [, forceUpdate] = useState(0);
+  const [displayedContent, setDisplayedContent] = useState<{[key: string]: string}>({});
+  const contentTrackerRef = useRef<{[key: string]: string}>({});
+  const intervalsRef = useRef<{[key: string]: NodeJS.Timeout}>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Typewriter effect for card content
+  useEffect(() => {
+    messages.forEach((msg) => {
+      if (msg.type === 'ai-response' || msg.type === 'ai-processing') {
+        msg.cards?.forEach((card) => {
+          // Task description animation
+          const taskKey = `${card.id}-task`;
+          if (card.taskDescription && contentTrackerRef.current[taskKey] !== card.taskDescription) {
+            if (intervalsRef.current[taskKey]) {
+              clearInterval(intervalsRef.current[taskKey]);
+            }
+            
+            contentTrackerRef.current[taskKey] = card.taskDescription;
+            const words = card.taskDescription.split(' ');
+            let currentIndex = 0;
+            
+            flushSync(() => {
+              setDisplayedContent((prev) => ({ ...prev, [taskKey]: '' }));
+            });
+            
+            intervalsRef.current[taskKey] = setInterval(() => {
+              currentIndex += 2;
+              if (currentIndex <= words.length) {
+                setDisplayedContent((prev) => ({
+                  ...prev,
+                  [taskKey]: words.slice(0, currentIndex).join(' '),
+                }));
+              } else {
+                setDisplayedContent((prev) => ({
+                  ...prev,
+                  [taskKey]: words.join(' '),
+                }));
+                clearInterval(intervalsRef.current[taskKey]);
+                delete intervalsRef.current[taskKey];
+              }
+            }, 15);
+          }
+          
+          // Content animation
+          if (card.content && contentTrackerRef.current[card.id] !== card.content) {
+            if (intervalsRef.current[card.id]) {
+              clearInterval(intervalsRef.current[card.id]);
+            }
+            
+            contentTrackerRef.current[card.id] = card.content;
+            const words = card.content.split(' ');
+            let currentIndex = 0;
+            
+            flushSync(() => {
+              setDisplayedContent((prev) => ({ ...prev, [card.id]: '' }));
+            });
+            
+            intervalsRef.current[card.id] = setInterval(() => {
+              currentIndex += 2;
+              if (currentIndex <= words.length) {
+                setDisplayedContent((prev) => ({
+                  ...prev,
+                  [card.id]: words.slice(0, currentIndex).join(' '),
+                }));
+              } else {
+                setDisplayedContent((prev) => ({
+                  ...prev,
+                  [card.id]: words.join(' '),
+                }));
+                clearInterval(intervalsRef.current[card.id]);
+                delete intervalsRef.current[card.id];
+              }
+            }, 15);
+          }
+        });
+        
+        if (msg.finalCard?.content && contentTrackerRef.current['final-card'] !== msg.finalCard.content) {
+          if (intervalsRef.current['final-card']) {
+            clearInterval(intervalsRef.current['final-card']);
+          }
+          
+          contentTrackerRef.current['final-card'] = msg.finalCard.content;
+          const words = msg.finalCard.content.split(' ');
+          let currentIndex = 0;
+          
+          flushSync(() => {
+            setDisplayedContent((prev) => ({ ...prev, 'final-card': '' }));
+          });
+          
+          intervalsRef.current['final-card'] = setInterval(() => {
+            currentIndex += 2;
+            if (currentIndex <= words.length) {
+              setDisplayedContent((prev) => ({
+                ...prev,
+                'final-card': words.slice(0, currentIndex).join(' '),
+              }));
+            } else {
+              setDisplayedContent((prev) => ({
+                ...prev,
+                'final-card': words.join(' '),
+              }));
+              clearInterval(intervalsRef.current['final-card']);
+              delete intervalsRef.current['final-card'];
+            }
+          }, 15);
+        }
+      }
+    });
+  }, [messages]);
 
   // Process ticker symbols for TradingView compatibility
   const processTickers = (tickers: string[]): string[] => {
@@ -974,7 +1083,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                     : "text-gray-600"
                                 }`}
                               >
-                                {card.taskDescription}
+                                {displayedContent[`${card.id}-task`] !== undefined ? displayedContent[`${card.id}-task`] : ''}
                               </div>
                             </div>
                           )}
@@ -997,14 +1106,14 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             >
                               {(() => {
                                 try {
-                                  return (
+                                  return displayedContent[card.id] !== undefined ? (
                                     <ReactMarkdown
                                       remarkPlugins={[remarkGfm]}
                                       components={markdownComponents}
                                     >
-                                      {card.content.replace(/\n/g, "  \n")}
+                                      {displayedContent[card.id].replace(/\n/g, "  \n")}
                                     </ReactMarkdown>
-                                  );
+                                  ) : null;
                                 } catch (error) {
                                   console.error(
                                     "Agent card markdown render error:",
@@ -1095,17 +1204,17 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             >
                               {(() => {
                               try {
-                                return (
+                                return displayedContent['final-card'] !== undefined ? (
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={markdownComponents}
                                   >
-                                    {msg.finalCard.content.replace(
+                                    {displayedContent['final-card'].replace(
                                       /\n/g,
                                       "  \n"
                                     )}
                                   </ReactMarkdown>
-                                );
+                                ) : null;
                               } catch (error) {
                                 console.error("Markdown render error:", error);
                                 return (
