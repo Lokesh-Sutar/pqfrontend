@@ -32,7 +32,7 @@ interface AgentCard {
     result?: any;
   }[];
   content: string;
-  taskDescription?: string;`
+  taskDescription?: string;
   startTime?: number;
   totalDuration?: number;
 }
