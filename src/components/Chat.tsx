@@ -32,7 +32,7 @@ interface AgentCard {
     result?: any;
   }[];
   content: string;
-  taskDescription?: string;
+  taskDescription?: string;`
   startTime?: number;
   totalDuration?: number;
 }
@@ -495,7 +495,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
           console.log(
             `🔧 TeamToolCallStarted (${data.payload?.tool?.tool_args?.member_id}) EVENT:`,
             JSON.stringify(
-              data.payload?.tool?.tool_args?.task_description,
+              data.payload?.tool?.tool_args?.task,
               null,
               2
             )
@@ -503,7 +503,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
           const toolName = data.payload?.tool?.tool_name;
           const memberId = data.payload?.tool?.tool_args?.member_id;
           const taskDescription =
-            data.payload?.tool?.tool_args?.task_description;
+            data.payload?.tool?.tool_args?.task;
           const runId = data.meta?.runId;
 
           if (toolName === "delegate_task_to_member" && memberId && runId) {
