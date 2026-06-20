@@ -30,13 +30,12 @@ export function Header({
     >
       {/* Left side - Logo and branding */}
       <div className="flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: "var(--primary)" }}
-        >
-          <span className="text-white font-bold text-sm">PQ</span>
-        </div>
-        <h1 className="text-xl font-semibold">PersonaQuant</h1>
+        <img src="/icon.png" alt="PersonaQuant" className="w-8 h-8" />
+        <img
+          src={darkMode ? "/name_for_dark.png" : "/name_for_light.png"}
+          alt="PersonaQuant"
+          className="h-5 md:h-6"
+        />
       </div>
 
       {/* Right side - Controls */}
