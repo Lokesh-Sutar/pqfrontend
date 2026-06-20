@@ -397,7 +397,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     // Send message to backend API
     try {
       const eventSource = new EventSource(
-        `https://strongly-distribution-pharmaceutical-approaches.trycloudflare.com/api/chat?prompt=${encodeURIComponent(
+        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(
           userMessage
         )}`
       );
