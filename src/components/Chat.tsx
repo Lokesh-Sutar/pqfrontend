@@ -193,7 +193,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   const markdownComponents = {
     h1: ({ children }: any) => (
       <h1
-        className={`text-lg font-bold mb-2 ${
+        className={`text-base md:text-lg font-bold mb-2 ${
           darkMode ? "text-white" : "text-gray-900"
         }`}
       >
@@ -202,7 +202,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     h2: ({ children }: any) => (
       <h2
-        className={`text-base font-semibold mb-2 ${
+        className={`text-sm md:text-base font-semibold mb-2 ${
           darkMode ? "text-white" : "text-gray-900"
         }`}
       >
@@ -211,7 +211,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     h3: ({ children }: any) => (
       <h3
-        className={`text-sm font-medium mb-1 ${
+        className={`text-xs md:text-sm font-medium mb-1 ${
           darkMode ? "text-neutral-300" : "text-gray-700"
         }`}
       >
@@ -219,13 +219,13 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
       </h3>
     ),
     p: ({ children }: any) => (
-      <p className={`mb-2 ${darkMode ? "text-neutral-200" : "text-gray-800"}`}>
+      <p className={`mb-2 text-sm md:text-base ${darkMode ? "text-neutral-200" : "text-gray-800"}`}>
         {children}
       </p>
     ),
     ul: ({ children }: any) => (
       <ul
-        className={`mb-2 ml-4 space-y-1 ${
+        className={`mb-2 ml-4 space-y-1 text-sm md:text-base ${
           darkMode ? "text-neutral-200" : "text-gray-800"
         }`}
       >
@@ -234,7 +234,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     ol: ({ children }: any) => (
       <ol
-        className={`list-decimal list-inside mb-2 ml-4 space-y-1 ${
+        className={`list-decimal list-inside mb-2 ml-4 space-y-1 text-sm md:text-base ${
           darkMode ? "text-neutral-200" : "text-gray-800"
         }`}
       >
@@ -243,24 +243,24 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     li: ({ children }: any) => (
       <li
-        className={`${
+        className={`text-sm md:text-base ${
           darkMode ? "text-neutral-200" : "text-gray-800"
         } flex items-start`}
       >
-        <span className="mr-2 font-bold text-lg">•</span>
+        <span className="mr-2 font-bold text-base md:text-lg">•</span>
         <span className="flex-1">{children}</span>
       </li>
     ),
     strong: ({ children }: any) => (
       <strong
-        className={`font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}
+        className={`text-sm md:text-base font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}
       >
         {children}
       </strong>
     ),
     em: ({ children }: any) => (
       <em
-        className={`italic ${darkMode ? "text-neutral-300" : "text-gray-700"}`}
+        className={`text-sm md:text-base italic ${darkMode ? "text-neutral-300" : "text-gray-700"}`}
       >
         {children}
       </em>
@@ -278,7 +278,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     pre: ({ children }: any) => (
       <pre
-        className={`p-3 rounded-lg overflow-x-auto text-sm font-mono mb-2 ${
+        className={`p-3 rounded-lg overflow-x-auto text-xs md:text-sm font-mono mb-2 ${
           darkMode
             ? "bg-neutral-600 text-neutral-200"
             : "bg-gray-200 text-gray-800"
@@ -289,7 +289,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     blockquote: ({ children }: any) => (
       <blockquote
-        className={`border-l-4 pl-4 italic mb-2 ${
+        className={`border-l-4 pl-4 italic mb-2 text-sm md:text-base ${
           darkMode
             ? "border-neutral-600 text-neutral-300"
             : "border-gray-300 text-gray-600"
@@ -300,7 +300,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     table: ({ children }: any) => (
       <table
-        className={`min-w-full mb-4 border-collapse ${
+        className={`min-w-full mb-4 border-collapse text-sm md:text-base ${
           darkMode ? "border-neutral-600" : "border-gray-300"
         }`}
       >
@@ -324,7 +324,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     th: ({ children }: any) => (
       <th
-        className={`px-3 py-2 text-left font-semibold ${
+        className={`px-3 py-2 text-left font-semibold text-sm md:text-base ${
           darkMode
             ? "text-white border-neutral-600"
             : "text-gray-900 border-gray-300"
@@ -335,7 +335,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     ),
     td: ({ children }: any) => (
       <td
-        className={`px-3 py-2 ${
+        className={`px-3 py-2 text-sm md:text-base ${
           darkMode
             ? "text-neutral-200 border-neutral-600"
             : "text-gray-800 border-gray-300"
@@ -822,14 +822,14 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
             // Welcome message 
             <div className="text-center">
               <h1
-                className={`text-4xl font-bold mb-4 ${
+                className={`text-2xl md:text-4xl font-bold mb-4 ${
                   darkMode ? "text-white" : "text-gray-900"
                 }`}
               >
                 Welcome to PersonaQuant
               </h1>
               <p
-                className={`text-sm ${
+                className={`text-xs md:text-sm ${
                   darkMode ? "text-gray-400" : "text-gray-500"
                 }`}
               >
@@ -928,7 +928,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             />
                           )}
                           <span
-                            className={`font-medium ${
+                            className={`text-sm md:text-base font-medium ${
                               darkMode ? "text-white" : "text-gray-900"
                             }`}
                           >
@@ -990,7 +990,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                               }`}
                             >
                               <div
-                                className={`text-sm font-medium mb-2 ${
+                                className={`text-xs md:text-sm font-medium mb-2 ${
                                   darkMode
                                     ? "text-neutral-300"
                                     : "text-gray-700"
@@ -1032,7 +1032,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                   return (
                                     <div
                                       key={idx}
-                                      className={`text-sm px-2 py-1 rounded flex justify-between items-center cursor-pointer transition-all duration-200 ease-in-out hover:scale-102 hover:shadow-sm ${
+                                      className={`text-xs md:text-sm px-2 py-1 rounded flex justify-between items-center cursor-pointer transition-all duration-200 ease-in-out hover:scale-102 hover:shadow-sm ${
                                         darkMode
                                           ? "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
                                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -1068,7 +1068,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           {card.taskDescription && (
                             <div>
                               <div
-                                className={`text-sm ${
+                                className={`text-xs md:text-sm ${
                                   darkMode
                                     ? "text-neutral-300"
                                     : "text-gray-600"
@@ -1077,7 +1077,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                 Working on task:
                               </div>
                               <div
-                                className={`text-sm ${
+                                className={`text-xs md:text-sm ${
                                   darkMode
                                     ? "text-neutral-300"
                                     : "text-gray-600"
@@ -1091,7 +1091,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             <div>
                             {card.title !== "Error" && (
                               <div
-                                className={`text-sm font-medium mb-2 ${
+                                className={`text-xs md:text-sm font-medium mb-2 ${
                                   darkMode
                                     ? "text-neutral-300"
                                     : "text-gray-700"
@@ -1100,7 +1100,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             )}{" "}
                             {/*Content:*/}
                             <div
-                              className={`text-sm ${
+                              className={`text-xs md:text-sm ${
                                 darkMode ? "text-neutral-200" : "text-gray-800"
                               }`}
                             >
@@ -1144,7 +1144,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               if (isProcessing && i === messages.length - 1) {
                 return (
                   <div key={i} className="flex justify-start animate-fade-in">
-                    <div className="w-full max-w-[90%] space-y-3">
+                    <div className="w-full max-w-full md:max-w-[90%] space-y-3">
                       {renderCards(msg.cards || [])}
                     </div>
                   </div>
@@ -1154,7 +1154,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               if (isAiResponse) {
                 return (
                   <div key={i} className="flex justify-start animate-fade-in">
-                    <div className="w-full max-w-[90%] space-y-3">
+                    <div className="w-full max-w-full md:max-w-[90%] space-y-3">
                       {renderCards(msg.cards || [], i.toString())}
 
                       {msg.finalCard && (
@@ -1166,7 +1166,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                           }`}
                         >
                           <div
-                            className={`p-3 font-medium rounded-t-lg ${
+                            className={`p-3 text-sm md:text-base font-medium rounded-t-lg ${
                               darkMode
                                 ? "text-white bg-yellow-900/30"
                                 : "text-gray-900 bg-yellow-100/50"
@@ -1198,7 +1198,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                 </div>
                               )}
                             <div
-                              className={`text-sm ${
+                              className={`text-xs md:text-sm ${
                                 darkMode ? "text-neutral-200" : "text-gray-800"
                               }`}
                             >
@@ -1247,7 +1247,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 }`}
               >
                 <div
-                  className={`max-w-[70%] p-4 rounded-2xl break-words overflow-wrap-anywhere ${
+                  className={`max-w-[85%] md:max-w-[70%] p-3 md:p-4 rounded-2xl break-words overflow-wrap-anywhere text-sm md:text-base ${
                     isUser
                       ? "text-white"
                       : darkMode
@@ -1269,7 +1269,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
             messages[messages.length - 1]?.type !== "ai-response" && (
               <div className="flex justify-start">
                 <div
-                  className={`p-4 rounded-2xl ${
+                  className={`p-4 rounded-2xl text-sm md:text-base ${
                     darkMode
                       ? "bg-neutral-800 text-white"
                       : "bg-gray-100 text-gray-900"
@@ -1303,15 +1303,15 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
         ></div>
       )}
 
-      <div className={`px-3 pb-3 pt-1 relative z-10 ${
-          messages.length === 0 ? "mb-[18%]" : ""
+      <div className={`px-2 md:px-3 pb-2 md:pb-3 pt-1 relative z-10 ${
+          messages.length === 0 ? "mb-[55%] md:mb-[18%]" : ""
         }`}
         style={{ transition: 'margin-bottom 0.3s ease-in-out' }}
       >
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <textarea
-              className={`w-full px-4 py-4 pr-14 rounded-2xl border focus:outline-none focus:ring-2 resize-none min-h-[56px] overflow-hidden ${
+              className={`w-full px-4 py-4 pr-14 rounded-2xl border focus:outline-none focus:ring-2 resize-none min-h-[56px] overflow-hidden text-sm md:text-base ${
                 darkMode
                   ? "bg-neutral-800 border-neutral-600 text-white placeholder-neutral-400"
                   : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500"
@@ -1373,11 +1373,11 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
           onClick={() => setSelectedTool(null)}
         >
           <div
-            className={`w-[80%] h-[80%] rounded-xl shadow-2xl animate-scale-in ${
+            className={`w-full md:w-[80%] h-full md:h-[80%] md:rounded-xl shadow-2xl animate-scale-in ${
               darkMode
                 ? "bg-neutral-800 border-neutral-600"
                 : "bg-white border-gray-200"
-            } border-2 flex flex-col overflow-hidden`}
+            } border-0 md:border-2 flex flex-col overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -1386,7 +1386,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               }`}
             >
               <h3
-                className={`text-xl font-semibold ${
+                className={`text-lg md:text-xl font-semibold ${
                   darkMode ? "text-white" : "text-gray-900"
                 }`}
               >
@@ -1404,34 +1404,34 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                 />
               </button>
             </div>
-            <div className="p-6 flex flex-col h-full overflow-hidden">
-              <div className="grid grid-cols-8 gap-6">
-                <div className="col-span-2">
+            <div className="p-4 md:p-6 flex flex-col h-full overflow-hidden">
+              <div className="grid grid-cols-2 md:grid-cols-8 gap-4 md:gap-6">
+                <div className="col-span-2 md:col-span-2">
                   <label
-                    className={`text-sm font-medium ${
+                    className={`text-xs md:text-sm font-medium ${
                       darkMode ? "text-neutral-300" : "text-gray-700"
                     }`}
                   >
                     Name:
                   </label>
                   <p
-                    className={`mt-2 text-lg font-semibold ${
+                    className={`mt-2 text-base md:text-lg font-semibold ${
                       darkMode ? "text-white" : "text-gray-900"
                     }`}
                   >
                     {selectedTool.name}
                   </p>
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-1 md:col-span-1">
                   <label
-                    className={`text-sm font-medium ${
+                    className={`text-xs md:text-sm font-medium ${
                       darkMode ? "text-neutral-300" : "text-gray-700"
                     }`}
                   >
                     Status:
                   </label>
                   <p
-                    className={`mt-2 text-lg font-semibold ${
+                    className={`mt-2 text-base md:text-lg font-semibold ${
                       selectedTool.duration
                         ? darkMode
                           ? "text-green-400"
@@ -1445,16 +1445,16 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   </p>
                 </div>
                 {selectedTool.duration && (
-                  <div className="col-span-1">
+                  <div className="col-span-1 md:col-span-1">
                     <label
-                      className={`text-sm font-medium ${
+                      className={`text-xs md:text-sm font-medium ${
                         darkMode ? "text-neutral-300" : "text-gray-700"
                       }`}
                     >
                       Duration:
                     </label>
                     <p
-                      className={`mt-2 text-lg font-semibold ${
+                      className={`mt-2 text-base md:text-lg font-semibold ${
                         darkMode ? "text-green-400" : "text-green-600"
                       }`}
                     >
@@ -1463,16 +1463,16 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                   </div>
                 )}
                 {selectedTool.args && (
-                  <div className="col-span-4">
+                  <div className="col-span-2 md:col-span-4">
                     <label
-                      className={`text-sm font-medium ${
+                      className={`text-xs md:text-sm font-medium ${
                         darkMode ? "text-neutral-300" : "text-gray-700"
                       }`}
                     >
                       Arguments:
                     </label>
                     <div
-                      className={`mt-2 p-3 rounded-lg text-sm ${
+                      className={`mt-2 p-3 rounded-lg text-xs md:text-sm ${
                         darkMode
                           ? "bg-neutral-700 text-neutral-200"
                           : "bg-gray-100 text-gray-800"
@@ -1488,7 +1488,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
               {selectedTool.result && (
                 <div className="mt-2 flex flex-col gap-2 overflow-hidden">
                   <label
-                    className={`text-sm font-medium ${
+                    className={`text-xs md:text-sm font-medium ${
                       darkMode ? "text-neutral-300" : "text-gray-700"
                     }`}
                   >
@@ -1509,7 +1509,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                       ) {
                         return (
                           <div
-                            className={`text-lg font-semibold ${
+                            className={`text-base md:text-lg font-semibold ${
                               darkMode ? "text-green-400" : "text-green-600"
                             }`}
                           >
@@ -1564,7 +1564,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                             selectedTool.name.includes("news"))
                         ) {
                           return (
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {parsed.map((item, index) => (
                                 <div
                                   key={index}
@@ -1576,7 +1576,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                 >
                                   {item.title && (
                                     <h4
-                                      className={`font-semibold mb-2 ${
+                                      className={`text-sm md:text-base font-semibold mb-2 ${
                                         darkMode
                                           ? "text-white"
                                           : "text-gray-900"
@@ -1587,7 +1587,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                   )}
                                   {item.body && (
                                     <p
-                                      className={`text-sm mb-2 ${
+                                      className={`text-xs md:text-sm mb-2 ${
                                         darkMode
                                           ? "text-gray-300"
                                           : "text-gray-700"
@@ -1608,7 +1608,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                                       href={item.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className={`text-sm underline ${
+                                      className={`text-xs md:text-sm underline ${
                                         darkMode
                                           ? "text-blue-400"
                                           : "text-blue-600"
@@ -1624,7 +1624,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                         }
 
                         return (
-                          <ul className="list-none space-y-1 text-sm">
+                          <ul className="list-none space-y-1 text-xs md:text-sm">
                             {renderBulletPoints(parsed)}
                           </ul>
                         );
@@ -1633,7 +1633,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
                         if (typeof selectedTool.result === "string") {
                           return (
                             <div
-                              className={`text-sm ${
+                              className={`text-xs md:text-sm ${
                                 darkMode ? "text-gray-200" : "text-gray-800"
                               }`}
                             >
