@@ -64,7 +64,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   const [, forceUpdate] = useState(0);
   const [displayedContent, setDisplayedContent] = useState<{[key: string]: string}>({});
   const contentTrackerRef = useRef<{[key: string]: string}>({});
-  const intervalsRef = useRef<{[key: string]: NodeJS.Timeout}>({});
+  const intervalsRef = useRef<{[key: string]: ReturnType<typeof setInterval>}>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Typewriter effect for card content
@@ -653,7 +653,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
       });
 
       // Handle error events
-      eventSource.addEventListener("error", (event) => {
+      eventSource.addEventListener("error", (event: MessageEvent) => {
         setLoading(false);
 
         let errorMessage = "An error occurred while processing your request.";
@@ -703,8 +703,8 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   };
 
   // Recursively render nested data as bullet points
-  const renderBulletPoints = (data: any, depth: number = 0): JSX.Element[] => {
-    const items: JSX.Element[] = [];
+  const renderBulletPoints = (data: any, depth: number = 0): React.ReactNode[] => {
+    const items: React.ReactNode[] = [];
 
     if (Array.isArray(data)) {
       data.forEach((item, index) => {
