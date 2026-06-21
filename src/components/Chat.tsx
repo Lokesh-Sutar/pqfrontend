@@ -397,7 +397,7 @@ export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
     // Send message to backend API
     try {
       const eventSource = new EventSource(
-        `/api/chat?prompt=${encodeURIComponent(
+        `https://pqbackend-2psf.onrender.com/api/chat?prompt=${encodeURIComponent(
           userMessage
         )}`
       );
