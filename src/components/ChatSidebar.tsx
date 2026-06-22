@@ -171,6 +171,80 @@ function ChatItem({
   );
 }
 
+function SidebarContent({
+  darkMode,
+  chats,
+  activeChatId,
+  ready,
+  onNewChat,
+  onSelectChat,
+  onDeleteChat,
+  onRenameChat,
+}: {
+  darkMode: boolean;
+  chats: ChatSession[];
+  activeChatId: string | null;
+  ready: boolean;
+  onNewChat: () => void;
+  onSelectChat: (id: string) => void;
+  onDeleteChat: (id: string) => void;
+  onRenameChat: (id: string, name: string) => void;
+}) {
+  return (
+    <>
+      <div className={`flex items-center justify-between px-4 h-16 border-b flex-shrink-0 ${
+        darkMode ? "border-neutral-700" : "border-gray-200"
+      }`}>
+        <h2 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
+          Chats
+        </h2>
+        <button
+          onClick={onNewChat}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out hover:scale-105 active:scale-95 bg-[var(--primary)] hover:brightness-110 text-white"
+        >
+          <Plus size={16} />
+          New
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        {chats.length === 0 ? (
+          <p className={`text-sm text-center mt-8 transition-opacity duration-500 ease-in-out ${
+            ready ? "opacity-100" : "opacity-0"
+          } ${darkMode ? "text-neutral-500" : "text-gray-400"}`}>
+            No chats yet
+          </p>
+        ) : (
+          [...chats]
+            .sort((a, b) => b.updatedAt - a.updatedAt)
+            .map((chat, index) => (
+              <div
+                key={chat.id}
+                className={`transition-all duration-500 ease-out ${
+                  ready
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-4"
+                }`}
+                style={{
+                  transitionDelay: `${Math.min(index * 40, 240)}ms`,
+                }}
+              >
+                <ChatItem
+                  chat={chat}
+                  isActive={chat.id === activeChatId}
+                  darkMode={darkMode}
+                  onSelect={() => onSelectChat(chat.id)}
+                  onDelete={() => onDeleteChat(chat.id)}
+                  onRename={(name) => onRenameChat(chat.id, name)}
+                />
+              </div>
+            ))
+        )}
+      </div>
+    </>
+  );
+}
+
 export function ChatSidebar({
   darkMode,
   chats,
@@ -193,77 +267,54 @@ export function ChatSidebar({
     }
   }, [isOpen])
 
+  const sidebarClasses = darkMode
+    ? "bg-neutral-900 border-neutral-700"
+    : "bg-white border-gray-200"
+
   return (
     <>
+      {/* Mobile backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out ${
+        className={`md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
 
+      {/* Mobile sidebar: fixed overlay below header */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 z-50 flex flex-col transition-transform duration-300 ease-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } ${
-          isOpen ? "shadow-2xl" : "shadow-none"
-        } ${
-          darkMode ? "bg-neutral-900 border-r border-neutral-700" : "bg-white border-r border-gray-200"
-        }`}
+        className={`md:hidden fixed left-0 top-16 bottom-0 w-72 z-50 flex flex-col transition-transform duration-300 ease-out ${
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full shadow-none"
+        } ${sidebarClasses} border-r`}
       >
-        <div className={`flex items-center justify-between px-4 h-16 border-b ${
-          darkMode ? "border-neutral-700" : "border-gray-200"
-        }`}>
-          <h2 className={`text-sm font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
-            Chats
-          </h2>
-          <button
-            onClick={onNewChat}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out hover:scale-105 active:scale-95 ${
-              darkMode
-                ? "bg-blue-600 hover:bg-blue-500 text-white"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
-          >
-            <Plus size={16} />
-            New
-          </button>
-        </div>
+        <SidebarContent
+          darkMode={darkMode}
+          chats={chats}
+          activeChatId={activeChatId}
+          ready={ready}
+          onNewChat={onNewChat}
+          onSelectChat={onSelectChat}
+          onDeleteChat={onDeleteChat}
+          onRenameChat={onRenameChat}
+        />
+      </aside>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {chats.length === 0 ? (
-            <p className={`text-sm text-center mt-8 transition-opacity duration-500 ease-in-out ${
-              ready ? "opacity-100" : "opacity-0"
-            } ${darkMode ? "text-neutral-500" : "text-gray-400"}`}>
-              No chats yet
-            </p>
-          ) : (
-            [...chats]
-              .sort((a, b) => b.updatedAt - a.updatedAt)
-              .map((chat, index) => (
-                <div
-                  key={chat.id}
-                  className={`transition-all duration-500 ease-out ${
-                    ready
-                      ? "opacity-100 translate-x-0"
-                      : "opacity-0 -translate-x-4"
-                  }`}
-                  style={{
-                    transitionDelay: `${Math.min(index * 40, 240)}ms`,
-                  }}
-                >
-                  <ChatItem
-                    chat={chat}
-                    isActive={chat.id === activeChatId}
-                    darkMode={darkMode}
-                    onSelect={() => onSelectChat(chat.id)}
-                    onDelete={() => onDeleteChat(chat.id)}
-                    onRename={(name) => onRenameChat(chat.id, name)}
-                  />
-                </div>
-              ))
-          )}
-        </div>
+      {/* Desktop sidebar: in-flow */}
+      <aside
+        className={`hidden md:flex flex-col border-r transition-all duration-300 ease-out flex-shrink-0 overflow-hidden ${
+          isOpen ? "w-72 border-r" : "w-0 border-r-0"
+        } ${sidebarClasses}`}
+      >
+        <SidebarContent
+          darkMode={darkMode}
+          chats={chats}
+          activeChatId={activeChatId}
+          ready={ready}
+          onNewChat={onNewChat}
+          onSelectChat={onSelectChat}
+          onDeleteChat={onDeleteChat}
+          onRenameChat={onRenameChat}
+        />
       </aside>
     </>
   );
