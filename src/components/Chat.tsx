@@ -1292,7 +1292,7 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             <textarea
-              className={`w-full px-4 py-4 pr-14 rounded-2xl border focus:outline-none focus:ring-2 resize-none min-h-[56px] overflow-hidden text-xs md:text-base ${
+              className={`w-full px-4 py-4 pr-14 rounded-2xl border focus:outline-none focus:ring-2 resize-none min-h-[48px] md:min-h-[56px] overflow-hidden text-xs md:text-base ${
                 darkMode
                   ? "bg-neutral-800 border-neutral-600 text-white placeholder-neutral-400"
                   : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500"
