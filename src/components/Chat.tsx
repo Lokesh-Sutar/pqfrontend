@@ -1327,7 +1327,7 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
               ref={textareaRef}
             />
             <button
-              className="absolute right-3 bottom-4 p-2 text-white rounded-lg disabled:opacity-50 transition-all duration-200 ease-out hover:opacity-90 hover:scale-110 active:scale-95"
+              className="absolute right-3 bottom-3 p-2 text-white rounded-lg disabled:opacity-50 transition-all duration-200 ease-out hover:opacity-90 hover:scale-110 active:scale-95"
               style={{ backgroundColor: "var(--primary)" }}
               onClick={sendMessage}
               disabled={loading || !input.trim()}
