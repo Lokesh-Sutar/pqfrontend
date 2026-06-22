@@ -781,7 +781,7 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
 
   return (
     <div
-      className={`flex-1 flex flex-col ${
+      className={`relative flex-1 flex flex-col ${
         darkMode ? "bg-neutral-900" : "bg-white"
       }`}
     >
