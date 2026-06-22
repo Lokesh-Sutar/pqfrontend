@@ -12,21 +12,51 @@ import {
   faClipboardList,
 } from "@fortawesome/free-solid-svg-icons";
 import { TradingViewWidget } from "./TradingViewWidget";
-import type { Message, AgentCard, ToolDetails } from "@/lib/chatStorage";
 
 // Props interface for Chat component
 interface ChatProps {
   darkMode: boolean;
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-  loading: boolean;
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   onMessageSent?: () => void;
   onToolsCompleted?: () => void;
 }
 
-export function Chat({ darkMode, messages, setMessages, loading, setLoading, onMessageSent, onToolsCompleted }: ChatProps) {
+interface AgentCard {
+  id: string;
+  runId: string;
+  title: string;
+  tools: {
+    name: string;
+    duration?: number;
+    startTime?: number;
+    args?: any;
+    result?: any;
+  }[];
+  content: string;
+  taskDescription?: string;
+  startTime?: number;
+  totalDuration?: number;
+}
+
+interface ToolDetails {
+  name: string;
+  args?: any;
+  result?: any;
+  duration?: number;
+  agent: string;
+}
+
+interface Message {
+  type: "user" | "ai-processing" | "ai-response";
+  content: string;
+  cards?: AgentCard[];
+  finalCard?: { title: string; content: string; tickers?: string[] };
+  tickers?: string[];
+}
+
+export function Chat({ darkMode, onMessageSent, onToolsCompleted }: ChatProps) {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
   const [expandedCards, setExpandedCards] = useState<{
     [key: string]: boolean;
   }>({});
@@ -39,7 +69,7 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
 
   // Typewriter effect for card content
   useEffect(() => {
-    messages.forEach((msg, msgIndex) => {
+    messages.forEach((msg) => {
       if (msg.type === 'ai-response' || msg.type === 'ai-processing') {
         msg.cards?.forEach((card) => {
           // Task description animation
@@ -108,34 +138,33 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
           }
         });
         
-        const fcKey = `final-card-${msgIndex}`;
-        if (msg.finalCard?.content && contentTrackerRef.current[fcKey] !== msg.finalCard.content) {
-          if (intervalsRef.current[fcKey]) {
-            clearInterval(intervalsRef.current[fcKey]);
+        if (msg.finalCard?.content && contentTrackerRef.current['final-card'] !== msg.finalCard.content) {
+          if (intervalsRef.current['final-card']) {
+            clearInterval(intervalsRef.current['final-card']);
           }
           
-          contentTrackerRef.current[fcKey] = msg.finalCard.content;
+          contentTrackerRef.current['final-card'] = msg.finalCard.content;
           const words = msg.finalCard.content.split(' ');
           let currentIndex = 0;
           
           flushSync(() => {
-            setDisplayedContent((prev) => ({ ...prev, [fcKey]: '' }));
+            setDisplayedContent((prev) => ({ ...prev, 'final-card': '' }));
           });
           
-          intervalsRef.current[fcKey] = setInterval(() => {
+          intervalsRef.current['final-card'] = setInterval(() => {
             currentIndex += 2;
             if (currentIndex <= words.length) {
               setDisplayedContent((prev) => ({
                 ...prev,
-                [fcKey]: words.slice(0, currentIndex).join(' '),
+                'final-card': words.slice(0, currentIndex).join(' '),
               }));
             } else {
               setDisplayedContent((prev) => ({
                 ...prev,
-                [fcKey]: words.join(' '),
+                'final-card': words.join(' '),
               }));
-              clearInterval(intervalsRef.current[fcKey]);
-              delete intervalsRef.current[fcKey];
+              clearInterval(intervalsRef.current['final-card']);
+              delete intervalsRef.current['final-card'];
             }
           }, 15);
         }
@@ -368,7 +397,7 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
     // Send message to backend API
     try {
       const eventSource = new EventSource(
-        `http://localhost:8000/api/chat?prompt=${encodeURIComponent(
+        `https://pqbackend-2psf.onrender.com/api/chat?prompt=${encodeURIComponent(
           userMessage
         )}`
       );
@@ -1176,26 +1205,18 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
                               }`}
                             >
                               {(() => {
-                              const fcKey = `final-card-${i}`;
                               try {
-                                return displayedContent[fcKey] !== undefined ? (
+                                return displayedContent['final-card'] !== undefined ? (
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={markdownComponents}
                                   >
-                                    {displayedContent[fcKey].replace(
+                                    {displayedContent['final-card'].replace(
                                       /\n/g,
                                       "  \n"
                                     )}
                                   </ReactMarkdown>
-                                ) : (
-                                  <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={markdownComponents}
-                                  >
-                                    {msg.finalCard.content.replace(/\n/g, "  \n")}
-                                  </ReactMarkdown>
-                                );
+                                ) : null;
                               } catch (error) {
                                 console.error("Markdown render error:", error);
                                 return (

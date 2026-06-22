@@ -9,12 +9,6 @@ body {
   font-family: 'Ubuntu', ui-sans-serif, system-ui, sans-serif;
 }
 
-* {
-  transition-property: background-color, color, border-color;
-  transition-duration: 0.3s;
-  transition-timing-function: ease;
-}
-
 .dark {
   --primary: #2563eb;
 }
@@ -72,10 +66,49 @@ body {
   }
 }
 
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes spin-hamburger {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
 
 .animate-scale-in {
   animation: scale-in 0.3s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 1s ease-out;
+}
+
+.animate-spin-hamburger {
+  animation: spin-hamburger 1s ease-out;
 }
