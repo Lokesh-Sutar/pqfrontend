@@ -632,7 +632,8 @@ export function Chat({ darkMode, messages, setMessages, loading, setLoading, onM
           try {
             const errorData = JSON.parse(event.data);
             if (errorData.error) {
-              errorMessage = errorData.error;
+              errorMessage = "Response [503 The model is busy]";
+              console.error("Error event received:", errorData.error);
             }
           } catch {}
         }
